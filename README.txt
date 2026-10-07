@@ -118,3 +118,11 @@ Audio fix (v18):
 - The race explicitly starts the soundtrack when a run begins.
 - Safari audio is primed muted on load and unlocked on the first trusted click/key gesture.
 - If Safari still blocks controller-only autoplay, click Enable Music once or set Safari Auto-Play for the site to Allow All Auto-Play.
+
+
+Splash screen / 8-bit theme:
+- Full-screen pixel-art Rackspace title screen.
+- Start New Game and Leaderboard menu options.
+- Controller: D-pad/stick selects, A/Cross confirms.
+- Shared leaderboard is viewable before starting a race.
+- Retro pixel styling is applied to menus, HUD, and overlays.

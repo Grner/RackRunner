@@ -74,3 +74,13 @@ Audio fix (v18):
 - The race explicitly starts the soundtrack when a run begins.
 - Safari audio is primed muted on load and unlocked on the first trusted click/key gesture.
 - If Safari still blocks controller-only autoplay, click Enable Music once or set Safari Auto-Play for the site to Allow All Auto-Play.
+
+
+## v19 title screen
+
+The game now opens on an 8-bit Rackspace-themed splash screen with two controller-friendly choices:
+
+- **Start New Game**
+- **Leaderboard**
+
+Use the D-pad or left stick to change the menu selection and A/Cross to confirm. The leaderboard menu reads the same shared server-side scores used during the race. The UI uses an original pixel-art Rackspace treatment and retro styling throughout the game.

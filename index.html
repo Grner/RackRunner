@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Rackspace Cloud Race: Escape the Hyperscalers</title>
+<title>Rackspace Cloud Race // VCF Edition</title>
 <style>
   :root{
     --rs-red:#c40022;--rs-red2:#e31b3d;--bg:#09090b;--panel:#151519;--panel2:#202027;
@@ -12,7 +12,7 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09090b}
-  body{position:fixed;inset:0;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overscroll-behavior:none}
+  body{position:fixed;inset:0;color:var(--text);font-family:"Courier New",ui-monospace,monospace;overscroll-behavior:none}
   .wrap{position:relative;width:var(--screen-w);height:var(--screen-h);overflow:hidden;background:#050506}
   .gamebox{position:absolute;inset:0;overflow:hidden;background:#050506;z-index:1}
   canvas{position:absolute;inset:0;display:block;width:100%;height:100%;outline:none;background:#050506}
@@ -26,7 +26,7 @@
   .mall-tag{display:inline-block;padding:3px 7px;border:1px solid #575760;border-radius:999px;background:rgba(23,23,27,.92);color:#eee;font-size:clamp(9px,.62vw,12px);letter-spacing:.07em;text-transform:uppercase}
 
   .controls{pointer-events:auto;display:flex;gap:7px;align-items:center;justify-content:flex-end;max-width:42%;flex-wrap:wrap}
-  input,select,button{border-radius:8px;border:1px solid var(--line);background:rgba(21,21,25,.94);color:var(--text);padding:8px 10px;font-size:clamp(12px,.78vw,15px)}
+  input,select,button{border-radius:0;border:1px solid var(--line);background:rgba(21,21,25,.94);color:var(--text);padding:8px 10px;font-size:clamp(12px,.78vw,15px)}
   button{cursor:pointer;font-weight:800}button.primary{background:var(--rs-red);border-color:var(--rs-red)}button:disabled{opacity:.45;cursor:not-allowed}
   .controller-focus{outline:4px solid #fff!important;box-shadow:0 0 0 5px #c40022!important}
 
@@ -47,7 +47,7 @@
 
   .overlay{position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.79);display:flex;align-items:center;justify-content:center;padding:24px}
   .overlay.hidden{display:none}
-  .card{max-width:min(720px,76vw);width:100%;background:rgba(17,17,20,.97);border:1px solid #494951;border-radius:14px;padding:clamp(20px,2.1vw,36px);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .card{max-width:min(720px,76vw);width:100%;background:rgba(17,17,20,.97);border:3px solid #494951;border-radius:0;padding:clamp(20px,2.1vw,36px);box-shadow:0 20px 60px rgba(0,0,0,.35)}
   .card h2{margin:.3rem 0 0;font-size:clamp(26px,2vw,38px)}.card p{color:#d0d0d6;line-height:1.45;font-size:clamp(14px,1vw,19px)}
   .keys{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px}.key{background:#212128;border-radius:9px;padding:9px;font-size:clamp(11px,.75vw,14px)}
   .quizAnswers{display:grid;gap:10px;margin-top:16px}.quizAnswers button{text-align:left;background:#202027;font-size:clamp(14px,1vw,20px);padding:12px 14px}
@@ -77,6 +77,34 @@
     .stats{top:100px;grid-template-columns:repeat(4,minmax(90px,1fr));right:18px}
     .fact{width:90%}.lower{grid-template-columns:1fr 220px}
   }
+
+  /* 8-bit Rackspace game theme */
+  .pixel-overlay{background:#070709}
+  .pixel-overlay::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+    linear-gradient(rgba(196,0,34,.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:8px 8px}
+  .pixel-overlay::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 2px,transparent 2px 5px)}
+  .splash-shell{position:relative;z-index:2;width:min(920px,90vw);text-align:center;font-family:"Courier New",ui-monospace,monospace;color:#fff}
+  .pixel-brand{display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:10px}
+  .pixel-logo-mark{width:clamp(72px,7vw,118px);height:auto;image-rendering:pixelated;filter:drop-shadow(8px 8px 0 #000)}
+  .pixel-wordmark{font-size:clamp(34px,5vw,82px);font-weight:900;letter-spacing:.08em;line-height:.9;color:#fff;text-shadow:5px 5px 0 #771022,9px 9px 0 #000}
+  .pixel-wordmark span{color:#e21d3d}
+  .pixel-title{font-size:clamp(22px,2.4vw,42px);font-weight:900;letter-spacing:.16em;margin:18px 0 5px;color:#f4f4f6;text-shadow:3px 3px 0 #000}
+  .pixel-subtitle{font-size:clamp(11px,1vw,18px);letter-spacing:.08em;color:#d1d1d7;margin-bottom:22px}
+  .splash-menu{display:grid;gap:12px;width:min(520px,76vw);margin:0 auto}
+  .splash-menu button,.pixel-button{border:3px solid #777781;border-radius:0;background:#151519;color:#fff;padding:14px 18px;font-family:"Courier New",ui-monospace,monospace;font-size:clamp(18px,1.5vw,27px);font-weight:900;text-transform:uppercase;letter-spacing:.08em;box-shadow:6px 6px 0 #000}
+  .splash-menu button.menu-selected,.splash-menu button.controller-focus{background:#c40022;border-color:#fff;transform:translate(2px,2px);box-shadow:3px 3px 0 #000}
+  .splash-help{margin-top:22px;font-size:clamp(10px,.9vw,16px);line-height:1.6;color:#bfc0c7}
+  .splash-help b{color:#fff}
+  .pixel-card{font-family:"Courier New",ui-monospace,monospace;border-radius:0;border:4px solid #6b6b75;box-shadow:10px 10px 0 #000;background:#111116}
+  .pixel-card h2{font-family:"Courier New",ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;text-shadow:3px 3px 0 #000}
+  .pixel-card .eyebrow{font-family:"Courier New",ui-monospace,monospace}
+  #splashLeaderboardList{columns:1!important;list-style:none;padding:0;margin:16px 0;font-size:clamp(16px,1.3vw,24px);line-height:1.6;text-align:left}
+  #splashLeaderboardList li{display:flex;justify-content:space-between;gap:18px;border-bottom:2px dashed #393942;padding:6px 8px}
+  .stat,.zone,.fact,.lower>div:last-child{border-radius:0}
+  .stat small,.stat strong,.fact,.zone,#gamepadStatus{font-family:"Courier New",ui-monospace,monospace}
+  .overlay .card:not(.license-card){border-radius:0}
+
 </style>
 </head>
 <body>
@@ -114,21 +142,38 @@
   <div class="gamebox">
     <canvas id="game" width="1280" height="720" tabindex="0" aria-label="Rackspace VCF Cloud racing game"></canvas>
 
-    <div class="overlay" id="startOverlay">
-      <div class="card">
-        <div class="eyebrow">How to play</div>
-        <h2>Escape the hyperscalers. Reach Rackspace Cloud.</h2>
-        <p>Leave hyperscaler lock-in behind and race through a modern Rackspace data center, passing compute, networking, Kubernetes, AI, and operations checkpoints on your way to Rackspace Cloud.</p>
-        <div class="keys">
-          <div class="key"><b>← / A</b><br>Move left</div>
-          <div class="key"><b>→ / D</b><br>Move right</div>
-          <div class="key"><b>Space / W</b><br>Jump</div>
-          <div class="key"><b>Shift</b><br>Turbo</div><div class="key"><b>Controller</b><br>A/Cross starts · D-pad/Stick moves · A jumps · B/RT turbo · Menu/Start pauses + shows leaderboard</div>
+    <div class="overlay pixel-overlay" id="startOverlay">
+      <div class="splash-shell">
+        <div class="pixel-brand" aria-label="Rackspace Cloud Race">
+          <svg class="pixel-logo-mark" viewBox="0 0 80 80" role="img" aria-label="8-bit Rackspace mark" shape-rendering="crispEdges">
+            <rect width="80" height="80" fill="#0b0b0d"/>
+            <g fill="#c40022">
+              <rect x="8" y="8" width="48" height="8"/><rect x="8" y="16" width="56" height="8"/>
+              <rect x="8" y="24" width="16" height="40"/><rect x="24" y="24" width="40" height="8"/>
+              <rect x="48" y="32" width="16" height="16"/><rect x="24" y="40" width="32" height="8"/>
+              <rect x="32" y="48" width="16" height="8"/><rect x="40" y="56" width="16" height="8"/>
+              <rect x="48" y="64" width="16" height="8"/>
+            </g>
+            <g fill="#ffffff"><rect x="16" y="28" width="8" height="8"/><rect x="16" y="48" width="8" height="8"/></g>
+          </svg>
+          <div class="pixel-wordmark"><span>RACK</span>SPACE</div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px">
-          <div style="font-weight:800">Your name is entered after you finish. <span style="color:#a9a9b2">Y/Triangle: leaderboard admin</span></div>
-          <button id="overlayStartBtn" class="primary" type="button">Start Race</button>
+        <div class="pixel-title">CLOUD RACE // VCF EDITION</div>
+        <div class="pixel-subtitle">ESCAPE HYPERSCALER LOCK-IN &gt;&gt; REACH RACKSPACE CLOUD</div>
+        <div class="splash-menu" role="menu" aria-label="Main menu">
+          <button id="overlayStartBtn" class="menu-selected" type="button" data-menu-index="0">▶ START NEW GAME</button>
+          <button id="splashLeaderboardBtn" type="button" data-menu-index="1">★ LEADERBOARD</button>
         </div>
+        <div class="splash-help"><b>CONTROLLER:</b> D-PAD / STICK = SELECT &nbsp;·&nbsp; A / CROSS = CONFIRM<br><b>GAME:</b> A / CROSS = JUMP &nbsp;·&nbsp; B / RT = TURBO &nbsp;·&nbsp; MENU / START = PAUSE + LEADERBOARD</div>
+      </div>
+    </div>
+    <div class="overlay hidden pixel-overlay" id="splashLeaderboardOverlay">
+      <div class="card pixel-card finish-card">
+        <div class="eyebrow">Rackspace Cloud Race</div>
+        <h2>High Scores</h2>
+        <ol id="splashLeaderboardList"><li><span>Loading scores…</span><span></span></li></ol>
+        <button id="splashBackBtn" type="button" class="primary pixel-button" style="width:100%">◀ BACK TO MENU</button>
+        <div class="finish-help">Controller: A / Cross, B / Circle, or Menu / Start returns to the title screen</div>
       </div>
     </div>
     <div class="overlay hidden" id="pauseOverlay">
@@ -238,6 +283,10 @@
   const musicStatus = $('musicStatus');
   const startOverlay = $('startOverlay');
   const overlayStartBtn = $('overlayStartBtn');
+  const splashLeaderboardBtn = $('splashLeaderboardBtn');
+  const splashLeaderboardOverlay = $('splashLeaderboardOverlay');
+  const splashLeaderboardList = $('splashLeaderboardList');
+  const splashBackBtn = $('splashBackBtn');
   const overlayRacer = $('overlayRacer');
   const quizOverlay = $('quizOverlay');
   const pauseOverlay = $('pauseOverlay');
@@ -285,6 +334,7 @@
   const keys={left:false,right:false,jump:false,boost:false};
   const keyboard={left:false,right:false,jump:false,boost:false};
   let leaderboard=[];
+  let splashSelection=0;
 
   async function loadLeaderboard(){
     try{
@@ -299,6 +349,7 @@
     renderLeaderboard();
     renderResultsLeaderboard();
     renderPauseLeaderboard();
+    renderSplashLeaderboard();
     return leaderboard;
   }
   const licenseGhost={
@@ -522,6 +573,45 @@
     bgMusic.pause();
     musicBtn.textContent='Music: Off';
     setMusicStatus('Music off');
+  }
+
+  function highlightSplashMenu(){
+    const buttons=[overlayStartBtn,splashLeaderboardBtn].filter(Boolean);
+    buttons.forEach((b,i)=>{
+      b.classList.toggle('menu-selected',i===splashSelection);
+      b.classList.toggle('controller-focus',i===splashSelection);
+    });
+  }
+
+  function renderSplashLeaderboard(){
+    if(!splashLeaderboardList) return;
+    if(!leaderboard.length){
+      splashLeaderboardList.innerHTML='<li><span>NO SCORES YET</span><span>—</span></li>';
+      return;
+    }
+    splashLeaderboardList.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${String(i+1).padStart(2,'0')}. ${escapeHtml(r.name).toUpperCase()}</b></span><span>${fmt(Number(r.time))}</span></li>`).join('');
+  }
+
+  async function openSplashLeaderboard(){
+    startOverlay.classList.add('hidden');
+    splashLeaderboardOverlay.classList.add('hidden');
+    splashLeaderboardOverlay.classList.remove('hidden');
+    splashLeaderboardList.innerHTML='<li><span>LOADING…</span><span></span></li>';
+    try{ await loadLeaderboard(); }catch(_){ splashLeaderboardList.innerHTML='<li><span>LEADERBOARD UNAVAILABLE</span><span></span></li>'; }
+    prevPad.confirm=false;
+  }
+
+  function closeSplashLeaderboard(){
+    splashLeaderboardOverlay.classList.add('hidden');
+    startOverlay.classList.remove('hidden');
+    highlightSplashMenu();
+    prevPad.confirm=false;
+    prevPad.pause=false;
+  }
+
+  function activateSplashSelection(){
+    if(splashSelection===0) resetRace();
+    else openSplashLeaderboard();
   }
 
   function renderLeaderboard(){
@@ -968,6 +1058,11 @@
     gp.buttons?.forEach((b,i)=>{if(b && (b.pressed||b.value>.55))pressed.push(i)});
     if(gamepadStatus) gamepadStatus.textContent=`Controller ready${gp.id?' · '+gp.id:''}${pressed.length?' · buttons '+pressed.join(','):''}`;
 
+    if(!splashLeaderboardOverlay.classList.contains('hidden')){
+      if(edge('confirm') || edge('pause') || edge('left') || edge('right')) closeSplashLeaderboard();
+      prevPad=now; return;
+    }
+
     if(!adminOverlay.classList.contains('hidden')){
       const cols=10;
       const count=adminKeys.length;
@@ -1014,7 +1109,9 @@
 
     if(!startOverlay.classList.contains('hidden')){
       if(edge('admin')){ openAdminOverlay(); prevPad=now; return; }
-      if(edge('confirm')) resetRace();
+      if(edge('left')||edge('up')){ splashSelection=(splashSelection+1)%2; highlightSplashMenu(); }
+      if(edge('right')||edge('down')){ splashSelection=(splashSelection+1)%2; highlightSplashMenu(); }
+      if(edge('confirm')) activateSplashSelection();
       prevPad=now; return;
     }
 
@@ -1478,6 +1575,15 @@
   document.addEventListener('keydown',unlockAudioFromGesture,{passive:true});
 
   app.addEventListener('keydown',e=>{
+    if(!splashLeaderboardOverlay.classList.contains('hidden')){
+      if(e.key==='Enter'||e.key==='Escape'||e.key==='Backspace'||e.key===' '){e.preventDefault();closeSplashLeaderboard();return;}
+    }
+    if(!startOverlay.classList.contains('hidden')){
+      if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='ArrowLeft'||e.key==='ArrowRight'){
+        e.preventDefault(); splashSelection=(splashSelection+1)%2; highlightSplashMenu(); return;
+      }
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();activateSplashSelection();return;}
+    }
     if((e.key==='p'||e.key==='P'||e.key==='Escape') && quizOverlay.classList.contains('hidden') && licenseOverlay.classList.contains('hidden') && finishOverlay.classList.contains('hidden') && resultsOverlay.classList.contains('hidden') && adminOverlay.classList.contains('hidden')){ e.preventDefault(); togglePauseMenu(); return; }
     if(e.key==='m'||e.key==='M'){e.preventDefault();toggleMusic();return;}
     if(!licenseOverlay.classList.contains('hidden') && (e.key==='Enter'||e.key===' ')){
@@ -1511,7 +1617,9 @@
   resultsRaceAgainBtn.addEventListener('click',resetRace);
   musicBtn.addEventListener('click',()=>{ if(musicEnabled && !audioUnlocked){ unlockAudio(); } else { toggleMusic(); } });
   startBtn.addEventListener('click',resetRace);
-  if(overlayStartBtn) overlayStartBtn.addEventListener('click',resetRace);
+  if(overlayStartBtn) overlayStartBtn.addEventListener('click',()=>{splashSelection=0;highlightSplashMenu();resetRace();});
+  if(splashLeaderboardBtn) splashLeaderboardBtn.addEventListener('click',()=>{splashSelection=1;highlightSplashMenu();openSplashLeaderboard();});
+  if(splashBackBtn) splashBackBtn.addEventListener('click',closeSplashLeaderboard);
   pauseBtn.addEventListener('click',togglePauseMenu);
   pauseResumeBtn.addEventListener('click',closePauseMenu);
 
@@ -1533,7 +1641,7 @@
     if(gamepadStatus) gamepadStatus.textContent=`Controller ready · ${e.gamepad.id}`;
     // WebKit may reveal the controller only after the first controller interaction.
     // If that first interaction is a face button on the start screen, treat it as Start.
-    if(!startOverlay.classList.contains('hidden') && anyConfirm(e.gamepad)) resetRace();
+    if(!startOverlay.classList.contains('hidden')) highlightSplashMenu();
   });
 
   window.addEventListener('gamepaddisconnected',e=>{
@@ -1541,6 +1649,7 @@
     if(gamepadStatus) gamepadStatus.textContent='Controller disconnected. Press a button after reconnecting.';
   });
 
+  highlightSplashMenu();
   loadLeaderboard();
   updateHud();
 })();
