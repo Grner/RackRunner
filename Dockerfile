@@ -3,6 +3,7 @@ FROM python:3.12-alpine
 WORKDIR /app
 COPY server.py /app/server.py
 COPY index.html /app/public/index.html
+COPY retro-race-theme.wav /app/public/retro-race-theme.wav
 
 RUN mkdir -p /data && adduser -D -H -u 10001 gameuser && chown -R gameuser:gameuser /app /data
 USER gameuser

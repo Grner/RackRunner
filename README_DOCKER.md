@@ -67,3 +67,10 @@ Pause leaderboard:
 - A/Cross or Menu/Start resumes the race.
 - The leaderboard refreshes from the Docker server when the pause screen opens.
 - Keyboard fallback: P or Escape toggles the pause leaderboard.
+
+
+Audio fix (v18):
+- The Docker image now explicitly copies retro-race-theme.wav into /app/public.
+- The race explicitly starts the soundtrack when a run begins.
+- Safari audio is primed muted on load and unlocked on the first trusted click/key gesture.
+- If Safari still blocks controller-only autoplay, click Enable Music once or set Safari Auto-Play for the site to Allow All Auto-Play.

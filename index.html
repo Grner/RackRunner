@@ -80,7 +80,7 @@
 </style>
 </head>
 <body>
-<audio id="bgMusic" src="retro-race-theme.wav" loop preload="auto"></audio>
+<audio id="bgMusic" src="retro-race-theme.wav" loop preload="auto" playsinline></audio>
 <div class="wrap" id="app" tabindex="0">
   <div class="top">
     <div>
@@ -100,7 +100,7 @@
       </select>
       <button id="startBtn" class="primary">Start Race</button>
       <button id="pauseBtn" disabled>Pause</button>
-      <button id="musicBtn" type="button">Music: On</button>
+      <button id="musicBtn" type="button">Music: On</button><span id="musicStatus" class="mall-tag">Sound ready</span>
     </div>
   </div>
 
@@ -235,6 +235,7 @@
   const pauseBtn = $('pauseBtn');
   const bgMusic = $('bgMusic');
   const musicBtn = $('musicBtn');
+  const musicStatus = $('musicStatus');
   const startOverlay = $('startOverlay');
   const overlayStartBtn = $('overlayStartBtn');
   const overlayRacer = $('overlayRacer');
@@ -447,16 +448,80 @@
   const totalTime=()=>state.time+state.penalty;
 
   let musicEnabled=true;
-  bgMusic.volume=0.26;
+  let audioUnlocked=false;
+  let audioPrimed=false;
+  bgMusic.volume=0.28;
+
+  function setMusicStatus(message){
+    if(musicStatus) musicStatus.textContent=message;
+  }
+
+  async function primeMutedAudio(){
+    // Safari commonly allows muted media to begin before audible playback is unlocked.
+    // Keeping it primed makes controller-started races work on more TV setups.
+    if(audioPrimed) return true;
+    try{
+      const wasMuted=bgMusic.muted;
+      bgMusic.muted=true;
+      await bgMusic.play();
+      audioPrimed=true;
+      if(!musicEnabled) bgMusic.pause();
+      bgMusic.muted=wasMuted;
+      return true;
+    }catch(_){
+      bgMusic.muted=false;
+      return false;
+    }
+  }
+
+  async function unlockAudio(){
+    if(!musicEnabled) return false;
+    try{
+      bgMusic.muted=false;
+      await bgMusic.play();
+      audioUnlocked=true;
+      audioPrimed=true;
+      musicBtn.textContent='Music: On';
+      setMusicStatus('Music playing');
+      return true;
+    }catch(_){
+      audioUnlocked=false;
+      musicBtn.textContent='Enable Music';
+      setMusicStatus('Safari: click or press a keyboard key once');
+      return false;
+    }
+  }
+
   function startMusic(){
     if(!musicEnabled) return;
+    bgMusic.muted=false;
     const attempt=bgMusic.play();
-    if(attempt && typeof attempt.catch==='function') attempt.catch(()=>{});
+    if(attempt && typeof attempt.then==='function'){
+      attempt.then(()=>{
+        audioUnlocked=true;
+        audioPrimed=true;
+        musicBtn.textContent='Music: On';
+        setMusicStatus('Music playing');
+      }).catch(()=>{
+        // Controller input does not always count as an autoplay-unlocking gesture in Safari.
+        // Keep the game playable and clearly tell the user how to unlock it once.
+        musicBtn.textContent='Enable Music';
+        setMusicStatus('Safari: click or press a keyboard key once');
+      });
+    }
   }
+
   function toggleMusic(){
-    musicEnabled=!musicEnabled;
-    musicBtn.textContent=musicEnabled?'Music: On':'Music: Off';
-    if(musicEnabled) startMusic(); else bgMusic.pause();
+    if(!musicEnabled){
+      musicEnabled=true;
+      musicBtn.textContent='Music: On';
+      unlockAudio();
+      return;
+    }
+    musicEnabled=false;
+    bgMusic.pause();
+    musicBtn.textContent='Music: Off';
+    setMusicStatus('Music off');
   }
 
   function renderLeaderboard(){
@@ -567,6 +632,7 @@
 
   function resetRace(){
     Object.assign(state,{running:true,paused:false,finished:false,time:0,penalty:0,stage:0,checkpointX:70,knowledge:0,boost:100,hits:0});
+    startMusic();
     state.knowledgeByStage=[0,0,0,0,0,0];
     state.quizDone=[false,false,false,false,false,false];
     tokens.forEach(t=>t.taken=false);
@@ -1403,6 +1469,14 @@
     if(/^[a-zA-Z]$/.test(e.key)){ e.preventDefault(); handleAdminKey(e.key.toUpperCase()); }
   });
 
+  function unlockAudioFromGesture(){
+    if(musicEnabled && !audioUnlocked) unlockAudio();
+  }
+
+  document.addEventListener('pointerdown',unlockAudioFromGesture,{passive:true});
+  document.addEventListener('touchstart',unlockAudioFromGesture,{passive:true});
+  document.addEventListener('keydown',unlockAudioFromGesture,{passive:true});
+
   app.addEventListener('keydown',e=>{
     if((e.key==='p'||e.key==='P'||e.key==='Escape') && quizOverlay.classList.contains('hidden') && licenseOverlay.classList.contains('hidden') && finishOverlay.classList.contains('hidden') && resultsOverlay.classList.contains('hidden') && adminOverlay.classList.contains('hidden')){ e.preventDefault(); togglePauseMenu(); return; }
     if(e.key==='m'||e.key==='M'){e.preventDefault();toggleMusic();return;}
@@ -1435,7 +1509,7 @@
   adminCancelBtn.addEventListener('click',closeAdminOverlay);
 
   resultsRaceAgainBtn.addEventListener('click',resetRace);
-  musicBtn.addEventListener('click',toggleMusic);
+  musicBtn.addEventListener('click',()=>{ if(musicEnabled && !audioUnlocked){ unlockAudio(); } else { toggleMusic(); } });
   startBtn.addEventListener('click',resetRace);
   if(overlayStartBtn) overlayStartBtn.addEventListener('click',resetRace);
   pauseBtn.addEventListener('click',togglePauseMenu);
