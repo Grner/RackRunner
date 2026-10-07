@@ -98,3 +98,16 @@ Docker hosted version:
 - Scores are shared across visitors to the same hosted instance.
 - After a racer submits their name, the leaderboard is shown immediately.
 - Password RACK clears the shared leaderboard.
+
+Soundtrack:
+- Includes an original 8-bit/chiptune race theme created for this game.
+- Loops during gameplay.
+- Music button or M toggles music.
+- LB/L1 toggles music from a controller.
+- Safari may require a one-time click/keyboard interaction or site autoplay permission before sound can begin.
+
+Pause leaderboard:
+- Press Menu/Start during a race to pause and show the shared leaderboard.
+- A/Cross or Menu/Start resumes the race.
+- The leaderboard refreshes from the Docker server when the pause screen opens.
+- Keyboard fallback: P or Escape toggles the pause leaderboard.

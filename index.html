@@ -65,6 +65,9 @@
   .finish-help{text-align:center;color:#c8c8cf;font-size:clamp(11px,.75vw,14px);margin-top:10px}
   .resultsLeaderboard{columns:1!important;list-style-position:inside;padding:0;margin:10px 0 0;font-size:clamp(16px,1.25vw,24px);line-height:1.65}
   .resultsLeaderboard li{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #303038;padding:4px 8px}
+  .pauseLeaderboard{columns:1!important;list-style:none;padding:0;margin:14px 0 0;font-size:clamp(17px,1.3vw,25px);line-height:1.55}
+  .pauseLeaderboard li{display:flex;justify-content:space-between;gap:20px;border-bottom:1px solid #303038;padding:5px 10px}
+  .pause-meta{display:flex;justify-content:space-between;gap:16px;align-items:center;margin:8px 0 4px;color:#c8c8cf;font-size:clamp(12px,.8vw,15px)}
 
   #gamepadStatus{position:absolute;z-index:22;right:18px;bottom:62px;color:#c9c9d0;font-size:clamp(10px,.67vw,13px);background:rgba(15,15,18,.72);padding:5px 8px;border-radius:7px;pointer-events:none}
   .footer:not(#gamepadStatus),.touch{display:none!important}
@@ -77,6 +80,7 @@
 </style>
 </head>
 <body>
+<audio id="bgMusic" src="retro-race-theme.wav" loop preload="auto"></audio>
 <div class="wrap" id="app" tabindex="0">
   <div class="top">
     <div>
@@ -85,7 +89,7 @@
       <div class="sub">Race from the hyperscaler starting zone into Rackspace Cloud, through a modern data center built for private cloud.</div>
       <div class="castle-note"><span class="mall-tag">START</span> Hyperscaler Lock-In &nbsp;→&nbsp; <span class="mall-tag">FINISH</span> Rackspace Cloud</div>
     </div>
-    <div class="controls"><span id="controllerHelp" class="mall-tag">Controller: Press A/Cross to activate + start · Stick/D-pad Move · B/RT Turbo</span>
+    <div class="controls"><span id="controllerHelp" class="mall-tag">Controller: A/Cross Start/Jump · Stick/D-pad Move · B/RT Turbo · Menu/Start Pause + Leaderboard</span>
       <label style="display:none">Racer <input id="racerName" value="Racer" maxlength="18"></label>
       <select id="racerPresets" aria-label="Quick racer name" style="display:none">
         <option value="Josh">Josh</option>
@@ -96,6 +100,7 @@
       </select>
       <button id="startBtn" class="primary">Start Race</button>
       <button id="pauseBtn" disabled>Pause</button>
+      <button id="musicBtn" type="button">Music: On</button>
     </div>
   </div>
 
@@ -118,12 +123,22 @@
           <div class="key"><b>← / A</b><br>Move left</div>
           <div class="key"><b>→ / D</b><br>Move right</div>
           <div class="key"><b>Space / W</b><br>Jump</div>
-          <div class="key"><b>Shift</b><br>Turbo</div><div class="key"><b>Controller</b><br>A/Cross starts · D-pad/Stick moves · A jumps · B/RT turbo · answer checkpoints correctly to continue</div>
+          <div class="key"><b>Shift</b><br>Turbo</div><div class="key"><b>Controller</b><br>A/Cross starts · D-pad/Stick moves · A jumps · B/RT turbo · Menu/Start pauses + shows leaderboard</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px">
           <div style="font-weight:800">Your name is entered after you finish. <span style="color:#a9a9b2">Y/Triangle: leaderboard admin</span></div>
           <button id="overlayStartBtn" class="primary" type="button">Start Race</button>
         </div>
+      </div>
+    </div>
+    <div class="overlay hidden" id="pauseOverlay">
+      <div class="card finish-card">
+        <div class="eyebrow">Race paused</div>
+        <h2>Leaderboard</h2>
+        <div class="pause-meta"><span id="pauseRunStatus">Current run</span><span>Shared scoreboard</span></div>
+        <ol id="pauseLeaderboard" class="pauseLeaderboard"><li><span>Loading scores…</span></li></ol>
+        <button id="pauseResumeBtn" type="button" class="primary" style="width:100%;margin-top:14px">Resume Race</button>
+        <div class="finish-help">Controller: A / Cross or Menu / Start resumes the race</div>
       </div>
     </div>
 <div class="overlay hidden" id="licenseOverlay">
@@ -218,10 +233,16 @@
   const $ = id => document.getElementById(id);
   const startBtn = $('startBtn');
   const pauseBtn = $('pauseBtn');
+  const bgMusic = $('bgMusic');
+  const musicBtn = $('musicBtn');
   const startOverlay = $('startOverlay');
   const overlayStartBtn = $('overlayStartBtn');
   const overlayRacer = $('overlayRacer');
   const quizOverlay = $('quizOverlay');
+  const pauseOverlay = $('pauseOverlay');
+  const pauseLeaderboard = $('pauseLeaderboard');
+  const pauseResumeBtn = $('pauseResumeBtn');
+  const pauseRunStatus = $('pauseRunStatus');
   const licenseOverlay = $('licenseOverlay');
   const licenseContinueBtn = $('licenseContinueBtn');
   const finishOverlay = $('finishOverlay');
@@ -276,6 +297,7 @@
     }
     renderLeaderboard();
     renderResultsLeaderboard();
+    renderPauseLeaderboard();
     return leaderboard;
   }
   const licenseGhost={
@@ -424,6 +446,19 @@
   }
   const totalTime=()=>state.time+state.penalty;
 
+  let musicEnabled=true;
+  bgMusic.volume=0.26;
+  function startMusic(){
+    if(!musicEnabled) return;
+    const attempt=bgMusic.play();
+    if(attempt && typeof attempt.catch==='function') attempt.catch(()=>{});
+  }
+  function toggleMusic(){
+    musicEnabled=!musicEnabled;
+    musicBtn.textContent=musicEnabled?'Music: On':'Music: Off';
+    if(musicEnabled) startMusic(); else bgMusic.pause();
+  }
+
   function renderLeaderboard(){
     if(!leaderboard.length){
       leaderboardEl.innerHTML='<li style="color:var(--muted)">No finishers yet.</li>';
@@ -441,6 +476,48 @@
     resultsLeaderboard.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${i+1}. ${escapeHtml(r.name)}</b></span><span>${fmt(Number(r.time))}</span></li>`).join('');
   }
 
+  function renderPauseLeaderboard(){
+    if(!pauseLeaderboard) return;
+    if(!leaderboard.length){
+      pauseLeaderboard.innerHTML='<li><span>No scores yet.</span><span>—</span></li>';
+      return;
+    }
+    pauseLeaderboard.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${i+1}. ${escapeHtml(r.name)}</b></span><span>${fmt(Number(r.time))}</span></li>`).join('');
+  }
+
+  async function openPauseMenu(){
+    if(!state.running || state.finished) return;
+    if(!quizOverlay.classList.contains('hidden') || !licenseOverlay.classList.contains('hidden') || !finishOverlay.classList.contains('hidden') || !resultsOverlay.classList.contains('hidden') || !adminOverlay.classList.contains('hidden')) return;
+    state.paused=true;
+    pauseBtn.textContent='Resume';
+    pauseRunStatus.textContent=`Current run: ${fmt(totalTime())} · Zone ${state.stage+1}/6`;
+    pauseLeaderboard.innerHTML='<li><span>Loading scores…</span><span></span></li>';
+    pauseOverlay.classList.remove('hidden');
+    try{
+      await loadLeaderboard();
+      renderPauseLeaderboard();
+    }catch(_){
+      pauseLeaderboard.innerHTML='<li><span>Leaderboard unavailable</span><span></span></li>';
+    }
+    prevPad.confirm=false;
+    prevPad.pause=false;
+  }
+
+  function closePauseMenu(){
+    if(pauseOverlay.classList.contains('hidden')) return;
+    pauseOverlay.classList.add('hidden');
+    state.paused=false;
+    pauseBtn.textContent='Pause';
+    prevPad.confirm=false;
+    prevPad.pause=false;
+    app.focus();
+  }
+
+  function togglePauseMenu(){
+    if(pauseOverlay.classList.contains('hidden')) openPauseMenu();
+    else closePauseMenu();
+  }
+
   function escapeHtml(value){
     return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
@@ -456,6 +533,7 @@
     leaderboard=Array.isArray(data.leaderboard)?data.leaderboard:[];
     renderLeaderboard();
     renderResultsLeaderboard();
+    renderPauseLeaderboard();
     return data;
   }
 
@@ -472,6 +550,7 @@
     leaderboard=[];
     renderLeaderboard();
     renderResultsLeaderboard();
+    renderPauseLeaderboard();
   }
 
 
@@ -507,6 +586,7 @@
     quizOverlay.classList.add('hidden');
     finishOverlay.classList.add('hidden');
     resultsOverlay.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
     licenseOverlay.classList.add('hidden');
     pauseBtn.disabled=false;
     pauseBtn.textContent='Pause';
@@ -763,7 +843,7 @@
 
   let quizSelection=0;
   let activeGamepadIndex=null;
-  let prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false};
+  let prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false,music:false};
 
   function highlightQuizSelection(){
     const buttons=[...$('quizAnswers').querySelectorAll('button')];
@@ -801,7 +881,7 @@
     const gp=getActiveGamepad();
     if(!gp){
       if(gamepadStatus) gamepadStatus.textContent='Controller: press any controller button to activate in Safari.';
-      prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false};
+      prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false,music:false};
       return;
     }
 
@@ -813,9 +893,11 @@
       down:buttonPressed(gp,13)||ax1>.55,
       confirm:anyConfirm(gp),
       pause:buttonPressed(gp,9)||buttonPressed(gp,8)||buttonPressed(gp,10),
-      admin:buttonPressed(gp,3)
+      admin:buttonPressed(gp,3),
+      music:buttonPressed(gp,4)
     };
     const edge=k=>now[k]&&!prevPad[k];
+    if(edge('music')) toggleMusic();
     const pressed=[];
     gp.buttons?.forEach((b,i)=>{if(b && (b.pressed||b.value>.55))pressed.push(i)});
     if(gamepadStatus) gamepadStatus.textContent=`Controller ready${gp.id?' · '+gp.id:''}${pressed.length?' · buttons '+pressed.join(','):''}`;
@@ -830,6 +912,11 @@
       if(edge('left')||edge('right')||edge('up')||edge('down')) highlightAdminSelection();
       if(edge('confirm')) handleAdminKey(adminKeys[adminSelection]);
       if(edge('pause')) closeAdminOverlay();
+      prevPad=now; return;
+    }
+
+    if(!pauseOverlay.classList.contains('hidden')){
+      if(edge('confirm') || edge('pause')) closePauseMenu();
       prevPad=now; return;
     }
 
@@ -879,7 +966,7 @@
     keys.right=keyboard.right || buttonPressed(gp,15) || ax0>.28;
     if(edge('confirm')) keys.jump=true;
     keys.boost=keyboard.boost || buttonPressed(gp,1)||buttonPressed(gp,5)||buttonPressed(gp,7);
-    if(edge('pause')){state.paused=!state.paused;pauseBtn.textContent=state.paused?'Resume':'Pause';}
+    if(edge('pause')) togglePauseMenu();
     prevPad=now;
   }
 
@@ -1317,6 +1404,8 @@
   });
 
   app.addEventListener('keydown',e=>{
+    if((e.key==='p'||e.key==='P'||e.key==='Escape') && quizOverlay.classList.contains('hidden') && licenseOverlay.classList.contains('hidden') && finishOverlay.classList.contains('hidden') && resultsOverlay.classList.contains('hidden') && adminOverlay.classList.contains('hidden')){ e.preventDefault(); togglePauseMenu(); return; }
+    if(e.key==='m'||e.key==='M'){e.preventDefault();toggleMusic();return;}
     if(!licenseOverlay.classList.contains('hidden') && (e.key==='Enter'||e.key===' ')){
       e.preventDefault();
       dismissLicenseOverlay();
@@ -1346,12 +1435,11 @@
   adminCancelBtn.addEventListener('click',closeAdminOverlay);
 
   resultsRaceAgainBtn.addEventListener('click',resetRace);
+  musicBtn.addEventListener('click',toggleMusic);
   startBtn.addEventListener('click',resetRace);
   if(overlayStartBtn) overlayStartBtn.addEventListener('click',resetRace);
-  pauseBtn.addEventListener('click',()=>{
-    state.paused=!state.paused;
-    pauseBtn.textContent=state.paused?'Resume':'Pause';
-  });
+  pauseBtn.addEventListener('click',togglePauseMenu);
+  pauseResumeBtn.addEventListener('click',closePauseMenu);
 
   function bindHold(id,key){
     const b=$(id);

@@ -59,3 +59,11 @@ The application needs these routes to reach the same container:
 ## Back up the leaderboard
 
 The persistent data file is `/data/leaderboard.json` inside the container. With Docker Compose it is stored in the `rackspace_race_data` volume.
+
+Audio: the Docker image serves `retro-race-theme.wav`, an original chiptune soundtrack bundled with the game.
+
+Pause leaderboard:
+- Press Menu/Start during a race to pause and show the shared leaderboard.
+- A/Cross or Menu/Start resumes the race.
+- The leaderboard refreshes from the Docker server when the pause screen opens.
+- Keyboard fallback: P or Escape toggles the pause leaderboard.
