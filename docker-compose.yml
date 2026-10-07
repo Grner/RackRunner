@@ -1,0 +1,14 @@
+services:
+  rackspace-cloud-race:
+    build: .
+    container_name: rackspace-cloud-race
+    ports:
+      - "8080:8080"
+    environment:
+      LEADERBOARD_PASSWORD: RACK
+    volumes:
+      - rackspace_race_data:/data
+    restart: unless-stopped
+
+volumes:
+  rackspace_race_data:

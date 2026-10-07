@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rackspace Cloud Race: Escape the Hyperscalers</title>
+<style>
+  :root{
+    --rs-red:#c40022;--rs-red2:#e31b3d;--bg:#09090b;--panel:#151519;--panel2:#202027;
+    --text:#f7f7f8;--muted:#a9a9b2;--line:#34343c;--good:#75dc8b;--warn:#ffcb6b;
+    --screen-h:100vh;--screen-w:100vw;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09090b}
+  body{position:fixed;inset:0;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overscroll-behavior:none}
+  .wrap{position:relative;width:var(--screen-w);height:var(--screen-h);overflow:hidden;background:#050506}
+  .gamebox{position:absolute;inset:0;overflow:hidden;background:#050506;z-index:1}
+  canvas{position:absolute;inset:0;display:block;width:100%;height:100%;outline:none;background:#050506}
+
+  .top{position:absolute;z-index:20;top:14px;left:18px;right:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;pointer-events:none}
+  .top>div:first-child{max-width:58%}
+  h1{margin:0;font-size:clamp(27px,2.45vw,48px);line-height:1.02;text-shadow:0 2px 10px #000}
+  .eyebrow{font-size:clamp(10px,.72vw,14px);letter-spacing:.18em;text-transform:uppercase;color:#f25b6c;font-weight:800}
+  .sub{color:#d4d4d8;margin-top:4px;font-size:clamp(12px,1vw,19px);text-shadow:0 1px 8px #000}
+  .castle-note{margin-top:6px;color:#d0d0d6;font-size:clamp(10px,.72vw,14px)}
+  .mall-tag{display:inline-block;padding:3px 7px;border:1px solid #575760;border-radius:999px;background:rgba(23,23,27,.92);color:#eee;font-size:clamp(9px,.62vw,12px);letter-spacing:.07em;text-transform:uppercase}
+
+  .controls{pointer-events:auto;display:flex;gap:7px;align-items:center;justify-content:flex-end;max-width:42%;flex-wrap:wrap}
+  input,select,button{border-radius:8px;border:1px solid var(--line);background:rgba(21,21,25,.94);color:var(--text);padding:8px 10px;font-size:clamp(12px,.78vw,15px)}
+  button{cursor:pointer;font-weight:800}button.primary{background:var(--rs-red);border-color:var(--rs-red)}button:disabled{opacity:.45;cursor:not-allowed}
+  .controller-focus{outline:4px solid #fff!important;box-shadow:0 0 0 5px #c40022!important}
+
+  .stats{position:absolute;z-index:20;top:112px;left:18px;display:grid;grid-template-columns:repeat(4,minmax(120px,190px));gap:7px;pointer-events:none}
+  .stat{background:rgba(15,15,18,.80);border:1px solid rgba(90,90,100,.65);border-radius:9px;padding:6px 10px;backdrop-filter:blur(5px)}
+  .stat small{display:block;color:#b9b9c2;font-size:clamp(9px,.62vw,12px)}
+  .stat strong{font-size:clamp(17px,1.35vw,27px)}
+  .boostTrack{height:8px;background:#2d2d33;border-radius:100px;overflow:hidden;margin-top:6px}.boostFill{height:100%;width:100%;background:var(--rs-red)}
+
+  .fact{position:absolute;z-index:20;left:50%;bottom:62px;transform:translateX(-50%);width:min(72%,1180px);background:rgba(15,15,18,.88);border:1px solid rgba(90,90,100,.72);border-radius:10px;padding:9px 14px;font-size:clamp(12px,.9vw,18px);text-align:center;backdrop-filter:blur(5px);pointer-events:none}
+  .lower{position:absolute;z-index:20;left:18px;right:18px;bottom:12px;height:40px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:center;pointer-events:none}
+  .lower .eyebrow{display:none}
+  .zones{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;height:40px}
+  .zone{border:1px solid rgba(90,90,100,.65);background:rgba(21,21,25,.82);border-radius:7px;padding:4px;text-align:center;font-size:clamp(9px,.6vw,12px);display:flex;align-items:center;justify-content:center;gap:4px;backdrop-filter:blur(4px)}
+  .zone.active{border-color:var(--rs-red);box-shadow:inset 0 -3px 0 var(--rs-red)}.zone.done{opacity:.58}
+  .lower>div:last-child{height:40px;overflow:hidden;background:rgba(15,15,18,.82);border:1px solid rgba(90,90,100,.65);border-radius:7px;padding:5px 8px;backdrop-filter:blur(4px)}
+  ol{padding-left:20px;margin:0;font-size:11px;line-height:14px;columns:2;column-gap:10px}
+
+  .overlay{position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.79);display:flex;align-items:center;justify-content:center;padding:24px}
+  .overlay.hidden{display:none}
+  .card{max-width:min(720px,76vw);width:100%;background:rgba(17,17,20,.97);border:1px solid #494951;border-radius:14px;padding:clamp(20px,2.1vw,36px);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .card h2{margin:.3rem 0 0;font-size:clamp(26px,2vw,38px)}.card p{color:#d0d0d6;line-height:1.45;font-size:clamp(14px,1vw,19px)}
+  .keys{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px}.key{background:#212128;border-radius:9px;padding:9px;font-size:clamp(11px,.75vw,14px)}
+  .quizAnswers{display:grid;gap:10px;margin-top:16px}.quizAnswers button{text-align:left;background:#202027;font-size:clamp(14px,1vw,20px);padding:12px 14px}
+  .license-card{max-width:min(760px,88vw)}
+  .license-card h2{font-size:clamp(24px,2.2vw,38px);margin:.35rem 0}
+  .license-card p{font-size:clamp(15px,1.2vw,22px);line-height:1.45}
+  .finish-card{max-width:min(920px,86vw)}
+  .finish-score{font-size:clamp(18px,1.45vw,28px);font-weight:900;margin:8px 0 12px}
+  #finishName{width:100%;font-size:clamp(20px,1.6vw,30px);text-align:center;padding:10px 12px;margin:4px 0 12px;background:#0d0d10}
+  .nameKeyboard{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px}
+  .nameKeyboard button{min-height:44px;padding:7px 4px;font-size:clamp(13px,.9vw,18px);background:#202027}
+  .nameKeyboard button[data-key="SPACE"]{grid-column:span 4}
+  .nameKeyboard button[data-key="BACK"]{grid-column:span 2}
+  .nameKeyboard button[data-key="SUBMIT"]{grid-column:span 4;background:var(--rs-red);border-color:var(--rs-red)}
+  .finish-help{text-align:center;color:#c8c8cf;font-size:clamp(11px,.75vw,14px);margin-top:10px}
+  .resultsLeaderboard{columns:1!important;list-style-position:inside;padding:0;margin:10px 0 0;font-size:clamp(16px,1.25vw,24px);line-height:1.65}
+  .resultsLeaderboard li{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #303038;padding:4px 8px}
+
+  #gamepadStatus{position:absolute;z-index:22;right:18px;bottom:62px;color:#c9c9d0;font-size:clamp(10px,.67vw,13px);background:rgba(15,15,18,.72);padding:5px 8px;border-radius:7px;pointer-events:none}
+  .footer:not(#gamepadStatus),.touch{display:none!important}
+
+  @media(max-width:1000px){
+    .top>div:first-child{max-width:66%}.controls{max-width:34%}.controls label,.controls select,#controllerHelp{display:none}
+    .stats{top:100px;grid-template-columns:repeat(4,minmax(90px,1fr));right:18px}
+    .fact{width:90%}.lower{grid-template-columns:1fr 220px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app" tabindex="0">
+  <div class="top">
+    <div>
+      <div class="eyebrow">Rackspace Cloud Race</div>
+      <h1>Leave Hyperscaler Lock-In Behind.</h1>
+      <div class="sub">Race from the hyperscaler starting zone into Rackspace Cloud, through a modern data center built for private cloud.</div>
+      <div class="castle-note"><span class="mall-tag">START</span> Hyperscaler Lock-In &nbsp;→&nbsp; <span class="mall-tag">FINISH</span> Rackspace Cloud</div>
+    </div>
+    <div class="controls"><span id="controllerHelp" class="mall-tag">Controller: Press A/Cross to activate + start · Stick/D-pad Move · B/RT Turbo</span>
+      <label style="display:none">Racer <input id="racerName" value="Racer" maxlength="18"></label>
+      <select id="racerPresets" aria-label="Quick racer name" style="display:none">
+        <option value="Josh">Josh</option>
+        <option value="Racer 2">Racer 2</option>
+        <option value="Racer 3">Racer 3</option>
+        <option value="Racer 4">Racer 4</option>
+        <option value="Guest">Guest</option>
+      </select>
+      <button id="startBtn" class="primary">Start Race</button>
+      <button id="pauseBtn" disabled>Pause</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><small>TIME</small><strong id="time">0:00.0</strong></div>
+    <div class="stat"><small>ZONE</small><strong id="zone">VCF 9.1</strong></div>
+    <div class="stat"><small>KNOWLEDGE</small><strong id="knowledge">0 / 18</strong></div>
+    <div class="stat"><small>TURBO</small><div class="boostTrack"><div class="boostFill" id="boostFill"></div></div></div>
+  </div>
+
+  <div class="gamebox">
+    <canvas id="game" width="1280" height="720" tabindex="0" aria-label="Rackspace VCF Cloud racing game"></canvas>
+
+    <div class="overlay" id="startOverlay">
+      <div class="card">
+        <div class="eyebrow">How to play</div>
+        <h2>Escape the hyperscalers. Reach Rackspace Cloud.</h2>
+        <p>Leave hyperscaler lock-in behind and race through a modern Rackspace data center, passing compute, networking, Kubernetes, AI, and operations checkpoints on your way to Rackspace Cloud.</p>
+        <div class="keys">
+          <div class="key"><b>← / A</b><br>Move left</div>
+          <div class="key"><b>→ / D</b><br>Move right</div>
+          <div class="key"><b>Space / W</b><br>Jump</div>
+          <div class="key"><b>Shift</b><br>Turbo</div><div class="key"><b>Controller</b><br>A/Cross starts · D-pad/Stick moves · A jumps · B/RT turbo · answer checkpoints correctly to continue</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px">
+          <div style="font-weight:800">Your name is entered after you finish. <span style="color:#a9a9b2">Y/Triangle: leaderboard admin</span></div>
+          <button id="overlayStartBtn" class="primary" type="button">Start Race</button>
+        </div>
+      </div>
+    </div>
+<div class="overlay hidden" id="licenseOverlay">
+      <div class="card license-card">
+        <div class="eyebrow">Licensing Ghost caught you</div>
+        <h2>Don’t get trapped by licensing complexity.</h2>
+        <p>VMware licensing can add complexity and create lock-in when customers have to manage contracts, entitlements, renewals, compliance, and vendor coordination themselves.</p>
+        <p><b>Rackspace simplifies that.</b> On Rackspace-operated VCSP platforms, VMware licensing is included as part of the platform, and Rackspace manages the end-to-end Broadcom relationship for the service.</p>
+        <div style="border-left:4px solid #c40022;padding:10px 14px;background:#1d1d22;margin:14px 0">
+          <b>Focus on the cloud platform — not the licensing paperwork.</b>
+        </div>
+        <button id="licenseContinueBtn" type="button" class="primary" style="width:100%">Continue Race</button>
+        <div class="finish-help" style="margin-top:10px">Controller: press A / Cross to continue</div>
+      </div>
+    </div>
+    <div class="overlay hidden" id="quizOverlay">
+      <div class="card">
+        <div class="eyebrow">Checkpoint challenge</div>
+        <h2 id="quizTitle"></h2>
+        <p id="quizQuestion"></p>
+        <div class="quizAnswers" id="quizAnswers"></div>
+        <div id="quizFeedback" style="min-height:24px;margin-top:12px;font-weight:800"></div>
+      </div>
+    </div>
+    <div class="overlay hidden" id="adminOverlay" tabindex="0">
+      <div class="card finish-card">
+        <div class="eyebrow">Leaderboard Admin</div>
+        <h2>Enter password to clear scores</h2>
+        <div id="adminPasswordDisplay" class="finish-score">_</div>
+        <div id="adminKeyboard" class="nameKeyboard" aria-label="On-screen password keyboard"></div>
+        <div id="adminFeedback" class="finish-help">Password required. Controller: D-pad/stick moves · A/Cross selects.</div>
+        <button id="adminCancelBtn" type="button" style="width:100%;margin-top:10px">Cancel</button>
+      </div>
+    </div>
+    <div class="overlay hidden" id="resultsOverlay">
+      <div class="card finish-card">
+        <div class="eyebrow">Score saved</div>
+        <h2 id="resultsTitle">Leaderboard</h2>
+        <div id="resultsScore" class="finish-score"></div>
+        <ol id="resultsLeaderboard" class="resultsLeaderboard"></ol>
+        <button id="resultsRaceAgainBtn" type="button" class="primary" style="width:100%;margin-top:14px">Race Again</button>
+        <div class="finish-help">Controller: A / Cross races again · Y / Triangle opens leaderboard admin</div>
+      </div>
+    </div>
+    <div class="overlay hidden" id="finishOverlay">
+      <div class="card finish-card">
+        <div class="eyebrow">Rackspace Cloud reached</div>
+        <h2>Enter your name for the leaderboard</h2>
+        <div id="finishScore" class="finish-score">Official time: 0:00.0</div>
+        <input id="finishName" maxlength="18" autocomplete="off" placeholder="Your name" aria-label="Leaderboard name">
+        <div id="nameKeyboard" class="nameKeyboard" aria-label="On-screen name keyboard"></div>
+        <div id="finishFeedback" class="finish-help">Controller: D-pad/stick moves · A/Cross selects · choose SUBMIT when finished</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fact" id="fact"><b>Your mission:</b> Leave hyperscaler lock-in behind and reach Rackspace Cloud. Collect two VCF knowledge nodes in each zone to unlock the next gate.</div>
+
+  <div class="touch" aria-label="Touch controls">
+    <button id="leftBtn">←</button>
+    <button id="rightBtn">→</button>
+    <button id="jumpBtn">JUMP</button>
+    <button id="turboBtn" class="primary">TURBO</button>
+  </div>
+
+  <div class="lower">
+    <div>
+      <div class="eyebrow" style="margin-bottom:7px">Course</div>
+      <div class="zones" id="zones"></div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
+        <div class="eyebrow">Leaderboard</div>
+        <button id="clearLeaderboardBtn" type="button" style="padding:5px 8px;font-size:11px">Clear</button>
+      </div>
+      <ol id="leaderboard"><li style="color:var(--muted)">No finishers yet.</li></ol>
+    </div>
+  </div>
+
+  <div id="gamepadStatus" class="footer">Controller: not detected. Keyboard controls are active.</div>
+  <div class="footer">
+    Setting: a modern Rackspace data center. Start in the hyperscaler zone and reach Rackspace Cloud. One randomized Licensing Ghost encounter appears on every run.
+  </div>
+</div>
+
+<script>
+(() => {
+  const app = document.getElementById('app');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  const $ = id => document.getElementById(id);
+  const startBtn = $('startBtn');
+  const pauseBtn = $('pauseBtn');
+  const startOverlay = $('startOverlay');
+  const overlayStartBtn = $('overlayStartBtn');
+  const overlayRacer = $('overlayRacer');
+  const quizOverlay = $('quizOverlay');
+  const licenseOverlay = $('licenseOverlay');
+  const licenseContinueBtn = $('licenseContinueBtn');
+  const finishOverlay = $('finishOverlay');
+  const resultsOverlay = $('resultsOverlay');
+  const resultsTitle = $('resultsTitle');
+  const resultsScore = $('resultsScore');
+  const resultsLeaderboard = $('resultsLeaderboard');
+  const resultsRaceAgainBtn = $('resultsRaceAgainBtn');
+  const finishName = $('finishName');
+  const finishScore = $('finishScore');
+  const finishFeedback = $('finishFeedback');
+  const nameKeyboard = $('nameKeyboard');
+  const racerName = $('racerName');
+  const racerPresets = $('racerPresets');
+  const fact = $('fact');
+  const zonesEl = $('zones');
+  const leaderboardEl = $('leaderboard');
+  const clearLeaderboardBtn = $('clearLeaderboardBtn');
+  const adminOverlay = $('adminOverlay');
+  const adminPasswordDisplay = $('adminPasswordDisplay');
+  const adminKeyboard = $('adminKeyboard');
+  const adminFeedback = $('adminFeedback');
+  const adminCancelBtn = $('adminCancelBtn');
+  const gamepadStatus = $('gamepadStatus');
+
+
+  function syncViewport(){
+    document.documentElement.style.setProperty('--screen-h', window.innerHeight + 'px');
+    document.documentElement.style.setProperty('--screen-w', window.innerWidth + 'px');
+    window.scrollTo(0,0);
+  }
+  window.addEventListener('resize',syncViewport,{passive:true});
+  window.addEventListener('orientationchange',syncViewport,{passive:true});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',syncViewport,{passive:true});
+  syncViewport();
+
+  const W=1000,H=460,STAGE_W=1900,WORLD_W=STAGE_W*6,GROUND=390;
+  const PAR=330;
+  const keys={left:false,right:false,jump:false,boost:false};
+  const keyboard={left:false,right:false,jump:false,boost:false};
+  let leaderboard=[];
+
+  async function loadLeaderboard(){
+    try{
+      const response=await fetch('/api/leaderboard',{cache:'no-store'});
+      if(!response.ok) throw new Error('Leaderboard unavailable');
+      const data=await response.json();
+      leaderboard=Array.isArray(data)?data:[];
+    }catch(err){
+      console.warn(err);
+      leaderboard=[];
+    }
+    renderLeaderboard();
+    renderResultsLeaderboard();
+    return leaderboard;
+  }
+  const licenseGhost={
+    active:false,
+    triggered:false,
+    caught:false,
+    x:-1000,
+    y:GROUND-72,
+    w:52,
+    h:62,
+    spawnX:0,
+    speed:420
+  };
+
+  const zones=[
+    {
+      name:'Facility Entry', short:'VCF 9.1',
+      facts:[
+        'Rackspace Cloud is powered by VMware Cloud Foundation 9.1.',
+        'The platform brings cloud-style consumption to VMware workloads.',
+        'Rackspace operates the platform so customers can focus higher in the stack.'
+      ],
+      q:'What is the foundation underneath Rackspace Cloud?',
+      answers:['VMware Cloud Foundation 9.1','A standalone vSphere host','A public-cloud-only stack'],
+      correct:0
+    },
+    {
+      name:'Compute Hall', short:'Compute',
+      facts:[
+        'Rackspace Cloud is designed for both traditional VMs and modern workloads.',
+        'The service can support shared utility-style compute and dedicated compute models.',
+        'Dedicated compute emphasizes isolation; shared compute emphasizes elastic consumption.'
+      ],
+      q:'Which statement best describes the compute model?',
+      answers:['VM-only with no modern services','Cloud-style compute choices for different workload needs','Every customer must own physical hardware'],
+      correct:1
+    },
+    {
+      name:'Network & Security', short:'NSX',
+      facts:[
+        'Software-defined networking is part of the VCF platform.',
+        'NSX provides segmentation, policy and tenant connectivity.',
+        'Security policy can be applied closer to workloads instead of relying only on perimeter devices.'
+      ],
+      q:'Why is software-defined networking important?',
+      answers:['It turns every VM into a physical switch','It enables programmable networking, segmentation and policy','It removes the need for IP addresses'],
+      correct:1
+    },
+    {
+      name:'Kubernetes Row', short:'VKS',
+      facts:[
+        'Kubernetes can run alongside VMs on the same governed platform.',
+        'VCF brings infrastructure and Kubernetes operations closer together.',
+        'Application teams can consume modern services while infrastructure teams retain governance.'
+      ],
+      q:'What is the Kubernetes benefit of this model?',
+      answers:['Kubernetes must live in another cloud','VMs and Kubernetes can share a governed platform','Kubernetes replaces every VM immediately'],
+      correct:1
+    },
+    {
+      name:'AI Pod', short:'AI',
+      facts:[
+        'VCF can provide AI-ready infrastructure for modern data and AI workloads.',
+        'Private cloud can help organizations keep control over sensitive data.',
+        'Kubernetes, scalable compute and governance create a foundation for enterprise AI services.'
+      ],
+      q:'Why can private VCF infrastructure be attractive for AI?',
+      answers:['It guarantees every model is free','It combines modern compute with governance and data control','AI cannot run on Kubernetes'],
+      correct:1
+    },
+    {
+      name:'Operations Core', short:'Operate',
+      facts:[
+        'Rackspace focuses on lifecycle operations across compute, storage, networking and Kubernetes.',
+        'A managed platform reduces the infrastructure complexity application teams must own.',
+        'The target experience is simple to request, deploy, manage and support through its lifecycle.'
+      ],
+      q:'What is Rackspace trying to remove from the customer experience?',
+      answers:['Application ownership','The need to operate every layer of private-cloud infrastructure themselves','All governance and controls'],
+      correct:1
+    }
+  ];
+
+  zonesEl.innerHTML=zones.map((z,i)=>`<div class="zone" data-zone="${i}"><b>${i+1}</b><br>${z.short}</div>`).join('');
+
+  const player={x:70,y:GROUND-44,w:30,h:44,vx:0,vy:0,onGround:true};
+  const platforms=[],hazards=[],tokens=[];
+  const stars=Array.from({length:80},(_,i)=>({x:(i*177)%W,y:20+(i*67)%250,r:i%3===0?2:1}));
+
+  for(let s=0;s<6;s++){
+    const b=s*STAGE_W;
+    platforms.push({x:b,y:GROUND,w:STAGE_W,h:80});
+    const ps=[
+      [360,315,180],[700,260,170],[1020,320,210],[1320,275,190],[1580,320,170]
+    ];
+    ps.forEach((p,j)=>platforms.push({x:b+p[0],y:p[1]-(s===3&&j%2?25:0),w:p[2],h:18}));
+    const baseHazards=[260,610,950,1320,1640];
+    baseHazards.forEach((x,j)=>{
+      hazards.push({
+        x:b+x,y:GROUND-22,w:34+Math.min(18,s*3),h:22,
+        type:(j+s)%3===0?'drone':'spike',
+        phase:(s+j)*.73,speed:2.4+s*.38,amp:28+s*6
+      });
+    });
+    const extraCount=s===5?7:s*2;
+    for(let extra=0; extra<extraCount; extra++){
+      const x=b+360+extra*(118-Math.min(35,s*5));
+      hazards.push({
+        x,y:GROUND-22,w:32+(extra%2)*8,h:22,
+        type:extra%3===1?'drone':'spike',
+        phase:(s+extra)*.91,speed:2.6+s*.45,amp:30+s*7
+      });
+    }
+    if(s>=2){
+      hazards.push({x:b+1080,y:GROUND-22,w:38,h:22,type:'drone',phase:s*1.2,speed:3.7+s*.35,amp:44+s*5});
+      hazards.push({x:b+1140,y:GROUND-22,w:38,h:22,type:'drone',phase:s*1.2+1.4,speed:4.0+s*.35,amp:50+s*5});
+    }
+    if(s>=3){
+      [1450,1490,1530].forEach((x,idx)=>hazards.push({x:b+x,y:GROUND-22,w:34,h:22,type:'spike',phase:idx,speed:0,amp:0}));
+    }
+    if(s>=4){
+      [760,810,860,910].forEach((x,idx)=>hazards.push({x:b+x,y:GROUND-22,w:32,h:22,type:idx%2?'drone':'spike',phase:idx*1.1,speed:4.5+s*.3,amp:52+s*4}));
+    }
+    if(s===5){
+      // Final stage stays challenging, but gives racers a little more breathing room.
+      [1210,1330,1450,1570].forEach((x,idx)=>hazards.push({
+        x:b+x,y:GROUND-22,w:34,h:22,type:idx%2===0?'drone':'spike',
+        phase:idx*.9,speed:4.25+idx*.08,amp:48
+      }));
+    }
+    const ts=[470,1090,1630];
+    ts.forEach((x,j)=>tokens.push({x:b+x,y:[265,245,235][j],r:15,stage:s,fact:j,taken:false}));
+  }
+
+  const state={
+    running:false,paused:false,finished:false,time:0,penalty:0,stage:0,
+    checkpointX:70,knowledge:0,knowledgeByStage:[0,0,0,0,0,0],
+    quizDone:[false,false,false,false,false,false],boost:100,hits:0,last:0
+  };
+
+  function fmt(sec){
+    sec=Math.max(0,sec||0);
+    const m=Math.floor(sec/60);
+    const s=sec-m*60;
+    return `${m}:${s.toFixed(1).padStart(4,'0')}`;
+  }
+  const totalTime=()=>state.time+state.penalty;
+
+  function renderLeaderboard(){
+    if(!leaderboard.length){
+      leaderboardEl.innerHTML='<li style="color:var(--muted)">No finishers yet.</li>';
+      return;
+    }
+    leaderboardEl.innerHTML=leaderboard.map((r,i)=>`<li><b>${i+1}. ${escapeHtml(r.name)}</b> — ${fmt(Number(r.time))}</li>`).join('');
+  }
+
+  function renderResultsLeaderboard(){
+    if(!resultsLeaderboard) return;
+    if(!leaderboard.length){
+      resultsLeaderboard.innerHTML='<li><span>No scores yet.</span></li>';
+      return;
+    }
+    resultsLeaderboard.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${i+1}. ${escapeHtml(r.name)}</b></span><span>${fmt(Number(r.time))}</span></li>`).join('');
+  }
+
+  function escapeHtml(value){
+    return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function postScore(name,time,hits){
+    const response=await fetch('/api/leaderboard',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,time,hits})
+    });
+    if(!response.ok) throw new Error('Could not save score');
+    const data=await response.json();
+    leaderboard=Array.isArray(data.leaderboard)?data.leaderboard:[];
+    renderLeaderboard();
+    renderResultsLeaderboard();
+    return data;
+  }
+
+  async function clearLeaderboardOnServer(password){
+    const response=await fetch('/api/leaderboard',{
+      method:'DELETE',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password})
+    });
+    if(!response.ok){
+      if(response.status===403) throw new Error('Incorrect password.');
+      throw new Error('Could not clear leaderboard.');
+    }
+    leaderboard=[];
+    renderLeaderboard();
+    renderResultsLeaderboard();
+  }
+
+
+  function updateHud(){
+    $('time').textContent=fmt(totalTime());
+    $('zone').textContent=zones[state.stage]?.short || 'Finish';
+    $('knowledge').textContent=`${state.knowledge} / 18`;
+    $('boostFill').style.width=`${Math.max(0,Math.min(100,state.boost))}%`;
+    [...zonesEl.children].forEach((el,i)=>{
+      el.classList.toggle('active',i===state.stage&&!state.finished);
+      el.classList.toggle('done',state.quizDone[i]);
+    });
+  }
+
+  function resetRace(){
+    Object.assign(state,{running:true,paused:false,finished:false,time:0,penalty:0,stage:0,checkpointX:70,knowledge:0,boost:100,hits:0});
+    state.knowledgeByStage=[0,0,0,0,0,0];
+    state.quizDone=[false,false,false,false,false,false];
+    tokens.forEach(t=>t.taken=false);
+
+    // One random Licensing Ghost encounter per run.
+    // Spawn between roughly 28% and 72% of the course so it never appears immediately
+    // and does not wait until the finish line.
+    licenseGhost.active=false;
+    licenseGhost.triggered=false;
+    licenseGhost.caught=false;
+    licenseGhost.x=-1000;
+    licenseGhost.y=GROUND-licenseGhost.h;
+    licenseGhost.spawnX=WORLD_W*(0.28+Math.random()*0.44);
+    licenseGhost.speed=410+Math.random()*35;
+    Object.assign(player,{x:70,y:GROUND-44,vx:0,vy:0,onGround:true});
+    startOverlay.classList.add('hidden');
+    quizOverlay.classList.add('hidden');
+    finishOverlay.classList.add('hidden');
+    resultsOverlay.classList.add('hidden');
+    licenseOverlay.classList.add('hidden');
+    pauseBtn.disabled=false;
+    pauseBtn.textContent='Pause';
+    startBtn.textContent='Restart';
+    if(overlayStartBtn) overlayStartBtn.textContent='Start Race';
+    fact.innerHTML='<b>Race started:</b> collect knowledge, clear the checkpoint quizzes and beat the 5:30 par.';
+    app.focus();
+    updateHud();
+  }
+
+  function triggerLicenseGhost(){
+    if(licenseGhost.triggered || state.finished) return;
+    licenseGhost.triggered=true;
+    licenseGhost.active=true;
+    licenseGhost.x=Math.max(0,player.x-430);
+    licenseGhost.y=GROUND-licenseGhost.h;
+    fact.innerHTML='<b>WARNING:</b> The Licensing Ghost is chasing you. Keep moving!';
+  }
+
+  function licenseGhostCaught(){
+    if(licenseGhost.caught) return;
+    licenseGhost.caught=true;
+    licenseGhost.active=false;
+    player.vx=0;
+    state.running=false;
+    licenseOverlay.classList.remove('hidden');
+    prevPad.confirm=false;
+    fact.innerHTML='<b>LICENSING GHOST:</b> Licensing complexity caught up with you. Rackspace can manage the VMware/Broadcom licensing relationship as part of the platform.';
+  }
+
+  function dismissLicenseOverlay(){
+    if(licenseOverlay.classList.contains('hidden')) return;
+    licenseOverlay.classList.add('hidden');
+    if(!state.finished){
+      state.running=true;
+      app.focus();
+    }
+    prevPad.confirm=false;
+  }
+
+  function showFact(txt, stage){
+    fact.innerHTML=`<b>${zones[stage].short} intel:</b> ${txt}`;
+  }
+
+
+  function collide(a,b){
+    return a.x<a.x*0+b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
+  }
+
+  function hitPlayer(){
+    state.penalty+=5;
+    state.hits++;
+    player.x=state.checkpointX;
+    player.y=GROUND-player.h;
+    player.vx=0; player.vy=0;
+    fact.innerHTML='<b>+5 sec:</b> obstacle hit. Respawned at the last checkpoint.';
+  }
+
+  function openQuiz(stage){
+    state.running=false;
+    const z=zones[stage];
+    $('quizTitle').textContent=`Zone ${stage+1}: ${z.name}`;
+    $('quizQuestion').textContent=z.q;
+    $('quizFeedback').textContent='';
+    const box=$('quizAnswers');
+    box.innerHTML='';
+    z.answers.forEach((ans,i)=>{
+      const b=document.createElement('button');
+      b.textContent=ans;
+      b.addEventListener('click',()=>answerQuiz(stage,i));
+      box.appendChild(b);
+    });
+    quizOverlay.classList.remove('hidden');
+    quizSelection=0;
+    prevPad.confirm=false;
+    highlightQuizSelection();
+  }
+
+  function answerQuiz(stage,index){
+    const z=zones[stage];
+    const good=index===z.correct;
+    const buttons=[...$('quizAnswers').children];
+
+    if(!good){
+      state.penalty+=8;
+      $('quizFeedback').style.color='#ff8793';
+      $('quizFeedback').textContent='Wrong answer — +8 seconds. Try again. The gate stays locked until you answer correctly.';
+      buttons[index].style.borderColor='#ff8793';
+      buttons[index].style.background='#35171c';
+      return;
+    }
+
+    state.quizDone[stage]=true;
+    $('quizFeedback').style.color='var(--good)';
+    $('quizFeedback').textContent='Correct — checkpoint unlocked.';
+    buttons.forEach((b,i)=>{
+      b.disabled=true;
+      if(i===z.correct)b.style.borderColor='var(--good)';
+    });
+    setTimeout(()=>{
+      quizOverlay.classList.add('hidden');
+      state.checkpointX=(stage+1)*STAGE_W+60;
+      if(stage<5) state.stage=stage+1;
+      player.x=Math.max(player.x,(stage+1)*STAGE_W-170);
+      state.running=true;
+      app.focus();
+    },700);
+  }
+
+  let pendingFinishTime=0;
+  let nameSelection=0;
+  const nameKeys=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ','SPACE','BACK','SUBMIT'];
+
+  function renderNameKeyboard(){
+    nameKeyboard.innerHTML='';
+    nameKeys.forEach(key=>{
+      const b=document.createElement('button');
+      b.type='button';
+      b.dataset.key=key;
+      b.textContent=key==='SPACE'?'SPACE':key==='BACK'?'⌫ BACK':key==='SUBMIT'?'SUBMIT SCORE':key;
+      b.addEventListener('click',()=>handleNameKey(key));
+      nameKeyboard.appendChild(b);
+    });
+    highlightNameSelection();
+  }
+
+  function highlightNameSelection(){
+    const buttons=[...nameKeyboard.querySelectorAll('button')];
+    buttons.forEach((b,i)=>b.classList.toggle('controller-focus',i===nameSelection));
+  }
+
+  function handleNameKey(key){
+    if(key==='SPACE'){
+      if(finishName.value.length<18) finishName.value+=' ';
+    }else if(key==='BACK'){
+      finishName.value=finishName.value.slice(0,-1);
+    }else if(key==='SUBMIT'){
+      submitFinishName();
+    }else if(finishName.value.length<18){
+      finishName.value+=key;
+    }
+    finishFeedback.textContent='Controller: D-pad/stick moves · A/Cross selects · choose SUBMIT when finished';
+  }
+
+  async function submitFinishName(){
+    const name=finishName.value.trim().slice(0,18);
+    if(!name){
+      finishFeedback.textContent='Enter at least one character before submitting.';
+      finishFeedback.style.color='#ffcb6b';
+      return;
+    }
+    finishFeedback.style.color='';
+    finishFeedback.textContent='Saving score...';
+    try{
+      await postScore(name,pendingFinishTime,state.hits);
+    }catch(err){
+      finishFeedback.style.color='#ff8b95';
+      finishFeedback.textContent='Could not save the shared leaderboard score. Check the server connection and try again.';
+      return;
+    }
+
+    const delta=pendingFinishTime-PAR;
+    fact.innerHTML=`<b>SCORE SAVED — ${escapeHtml(name)}: ${fmt(pendingFinishTime)}</b> · ${delta<=0?Math.abs(delta).toFixed(1)+' sec under par':delta.toFixed(1)+' sec over par'} · Hits: ${state.hits}`;
+    finishOverlay.classList.add('hidden');
+    resultsScore.textContent=`${name} — ${fmt(pendingFinishTime)} · ${state.hits} hit${state.hits===1?'':'s'}`;
+    resultsTitle.textContent='Leaderboard';
+    renderResultsLeaderboard();
+    resultsOverlay.classList.remove('hidden');
+    prevPad.confirm=false;
+  }
+
+  function finishRace(){
+    state.running=false;
+    state.finished=true;
+    pauseBtn.disabled=true;
+    pendingFinishTime=totalTime();
+    finishName.value='';
+    finishScore.textContent=`Official time: ${fmt(pendingFinishTime)} · Hits: ${state.hits}`;
+    finishFeedback.textContent='Controller: D-pad/stick moves · A/Cross selects · choose SUBMIT when finished';
+    finishFeedback.style.color='';
+    nameSelection=0;
+    renderNameKeyboard();
+    finishOverlay.classList.remove('hidden');
+    fact.innerHTML=`<b>RACKSPACE CLOUD REACHED — ${fmt(pendingFinishTime)}</b> · Enter your name to post this run to the leaderboard.`;
+    prevPad.confirm=false;
+    setTimeout(()=>finishName.focus({preventScroll:true}),0);
+  }
+
+  const ADMIN_PASSWORD='RACK';
+  const adminKeys='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').concat(['BACK','SUBMIT']);
+  let adminEntry='';
+  let adminSelection=0;
+
+  function renderAdminKeyboard(){
+    adminKeyboard.innerHTML='';
+    adminKeys.forEach((key,i)=>{
+      const b=document.createElement('button');
+      b.type='button';
+      b.textContent=key==='BACK'?'⌫':key;
+      b.dataset.key=key;
+      if(i===adminSelection)b.classList.add('controller-focus');
+      b.addEventListener('click',()=>handleAdminKey(key));
+      adminKeyboard.appendChild(b);
+    });
+    adminPasswordDisplay.textContent=adminEntry ? '•'.repeat(adminEntry.length) : '_';
+  }
+
+  function highlightAdminSelection(){
+    [...adminKeyboard.querySelectorAll('button')].forEach((b,i)=>b.classList.toggle('controller-focus',i===adminSelection));
+  }
+
+  function openAdminOverlay(){
+    if(state.running && !state.finished) return;
+    loadLeaderboard();
+    adminEntry='';
+    adminSelection=0;
+    adminFeedback.textContent='Enter the password to clear all leaderboard scores.';
+    adminFeedback.style.color='';
+    renderAdminKeyboard();
+    adminOverlay.classList.remove('hidden');
+    adminOverlay.focus({preventScroll:true});
+    prevPad.confirm=false;
+  }
+
+  function closeAdminOverlay(){
+    adminOverlay.classList.add('hidden');
+    adminEntry='';
+    prevPad.confirm=false;
+  }
+
+  function handleAdminKey(key){
+    if(key==='BACK'){
+      adminEntry=adminEntry.slice(0,-1);
+    }else if(key==='SUBMIT'){
+      const submitted=adminEntry.toUpperCase();
+      adminFeedback.style.color='';
+      adminFeedback.textContent='Checking password...';
+      clearLeaderboardOnServer(submitted).then(()=>{
+        adminFeedback.style.color='#75dc8b';
+        adminFeedback.textContent='Leaderboard cleared.';
+        setTimeout(closeAdminOverlay,500);
+      }).catch(err=>{
+        adminFeedback.style.color='#ff8b95';
+        adminFeedback.textContent=err.message || 'Leaderboard was not cleared.';
+        adminEntry='';
+        adminPasswordDisplay.textContent='_';
+      });
+      return;
+    }else if(adminEntry.length<12){
+      adminEntry+=key;
+    }
+    adminPasswordDisplay.textContent=adminEntry ? '•'.repeat(adminEntry.length) : '_';
+  }
+
+  let quizSelection=0;
+  let activeGamepadIndex=null;
+  let prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false};
+
+  function highlightQuizSelection(){
+    const buttons=[...$('quizAnswers').querySelectorAll('button')];
+    buttons.forEach((b,i)=>b.classList.toggle('controller-focus',i===quizSelection));
+  }
+
+  function cycleRacer(delta){
+    const count=racerPresets.options.length;
+    racerPresets.selectedIndex=(racerPresets.selectedIndex+delta+count)%count;
+    racerName.value=racerPresets.value;
+    if(overlayRacer) overlayRacer.textContent='Racer: '+racerPresets.value;
+  }
+
+  function buttonPressed(gp,index){
+    const b=gp?.buttons?.[index];
+    return !!(b && (b.pressed || b.value>.55));
+  }
+
+  function anyConfirm(gp){
+    // Standard A/Cross plus fallback face buttons for controllers Safari exposes with non-standard mappings.
+    return [0,1,2,3].some(i=>buttonPressed(gp,i));
+  }
+
+  function getActiveGamepad(){
+    if(!navigator.getGamepads) return null;
+    const pads=navigator.getGamepads();
+    if(activeGamepadIndex!=null && pads[activeGamepadIndex]) return pads[activeGamepadIndex];
+    for(const gp of pads){
+      if(gp && gp.connected){ activeGamepadIndex=gp.index; return gp; }
+    }
+    return null;
+  }
+
+  function pollGamepad(){
+    const gp=getActiveGamepad();
+    if(!gp){
+      if(gamepadStatus) gamepadStatus.textContent='Controller: press any controller button to activate in Safari.';
+      prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false};
+      return;
+    }
+
+    const ax0=Number(gp.axes?.[0]||0), ax1=Number(gp.axes?.[1]||0);
+    const now={
+      left:buttonPressed(gp,14)||ax0<-.55,
+      right:buttonPressed(gp,15)||ax0>.55,
+      up:buttonPressed(gp,12)||ax1<-.55,
+      down:buttonPressed(gp,13)||ax1>.55,
+      confirm:anyConfirm(gp),
+      pause:buttonPressed(gp,9)||buttonPressed(gp,8)||buttonPressed(gp,10),
+      admin:buttonPressed(gp,3)
+    };
+    const edge=k=>now[k]&&!prevPad[k];
+    const pressed=[];
+    gp.buttons?.forEach((b,i)=>{if(b && (b.pressed||b.value>.55))pressed.push(i)});
+    if(gamepadStatus) gamepadStatus.textContent=`Controller ready${gp.id?' · '+gp.id:''}${pressed.length?' · buttons '+pressed.join(','):''}`;
+
+    if(!adminOverlay.classList.contains('hidden')){
+      const cols=10;
+      const count=adminKeys.length;
+      if(edge('left')) adminSelection=(adminSelection-1+count)%count;
+      if(edge('right')) adminSelection=(adminSelection+1)%count;
+      if(edge('up')) adminSelection=(adminSelection-cols+count)%count;
+      if(edge('down')) adminSelection=(adminSelection+cols)%count;
+      if(edge('left')||edge('right')||edge('up')||edge('down')) highlightAdminSelection();
+      if(edge('confirm')) handleAdminKey(adminKeys[adminSelection]);
+      if(edge('pause')) closeAdminOverlay();
+      prevPad=now; return;
+    }
+
+    if(!licenseOverlay.classList.contains('hidden')){
+      if(edge('confirm')) dismissLicenseOverlay();
+      prevPad=now; return;
+    }
+
+    if(!resultsOverlay.classList.contains('hidden')){
+      if(edge('admin')){ openAdminOverlay(); prevPad=now; return; }
+      if(edge('confirm')) resetRace();
+      prevPad=now; return;
+    }
+
+    if(!finishOverlay.classList.contains('hidden')){
+      const cols=10;
+      const count=nameKeys.length;
+      if(edge('left')) nameSelection=(nameSelection-1+count)%count;
+      if(edge('right')) nameSelection=(nameSelection+1)%count;
+      if(edge('up')) nameSelection=(nameSelection-cols+count)%count;
+      if(edge('down')) nameSelection=(nameSelection+cols)%count;
+      if(edge('left')||edge('right')||edge('up')||edge('down')) highlightNameSelection();
+      if(edge('confirm')){
+        const key=nameKeys[nameSelection];
+        handleNameKey(key);
+      }
+      prevPad=now; return;
+    }
+
+    if(!startOverlay.classList.contains('hidden')){
+      if(edge('admin')){ openAdminOverlay(); prevPad=now; return; }
+      if(edge('confirm')) resetRace();
+      prevPad=now; return;
+    }
+
+    if(!quizOverlay.classList.contains('hidden')){
+      const buttons=[...$('quizAnswers').querySelectorAll('button:not(:disabled)')];
+      if(buttons.length){
+        if(edge('left')||edge('up')){quizSelection=(quizSelection-1+buttons.length)%buttons.length;highlightQuizSelection();}
+        if(edge('right')||edge('down')){quizSelection=(quizSelection+1)%buttons.length;highlightQuizSelection();}
+        if(edge('confirm')) buttons[quizSelection]?.click();
+      }
+      prevPad=now; return;
+    }
+
+    keys.left=keyboard.left || buttonPressed(gp,14) || ax0<-.28;
+    keys.right=keyboard.right || buttonPressed(gp,15) || ax0>.28;
+    if(edge('confirm')) keys.jump=true;
+    keys.boost=keyboard.boost || buttonPressed(gp,1)||buttonPressed(gp,5)||buttonPressed(gp,7);
+    if(edge('pause')){state.paused=!state.paused;pauseBtn.textContent=state.paused?'Resume':'Pause';}
+    prevPad=now;
+  }
+
+  function update(dt){
+    if(!state.running||state.paused||state.finished)return;
+    if(!navigator.getGamepads || ![...navigator.getGamepads()].some(Boolean)){ keys.left=keyboard.left; keys.right=keyboard.right; keys.boost=keyboard.boost; }
+    state.time+=dt;
+
+    // Trigger exactly once per run at a randomized course position.
+    if(!licenseGhost.triggered && player.x>=licenseGhost.spawnX){
+      triggerLicenseGhost();
+    }
+
+    // The ghost is intentionally slightly faster than full turbo so the encounter
+    // is inevitable, but a skilled player can extend the chase.
+    if(licenseGhost.active){
+      const dx=player.x-licenseGhost.x;
+      const chaseSpeed=licenseGhost.speed + Math.min(55,Math.max(0,dx-220)*0.06);
+      licenseGhost.x += chaseSpeed*dt;
+      licenseGhost.y = GROUND-licenseGhost.h-8 + Math.sin(state.time*7)*13;
+
+      const ghostRect={x:licenseGhost.x,y:licenseGhost.y,w:licenseGhost.w,h:licenseGhost.h};
+      if(collide(player,ghostRect) || licenseGhost.x+licenseGhost.w>=player.x+8){
+        licenseGhostCaught();
+        updateHud();
+        return;
+      }
+    }
+
+    const boosting=keys.boost&&state.boost>0&&(keys.left||keys.right);
+    const speed=boosting?360:230;
+    state.boost=Math.max(0,Math.min(100,state.boost+(boosting?-30:11)*dt));
+
+    player.vx=(keys.right?speed:0)-(keys.left?speed:0);
+    if(keys.jump&&player.onGround){
+      player.vy=-560;player.onGround=false;keys.jump=false;
+    }
+
+    player.vy+=1280*dt;
+    player.x+=player.vx*dt;
+    player.x=Math.max(0,Math.min(WORLD_W-player.w,player.x));
+
+    const oldBottom=player.y+player.h;
+    player.y+=player.vy*dt;
+    player.onGround=false;
+
+    let best=Infinity;
+    for(const p of platforms){
+      if(player.x+player.w>p.x&&player.x<p.x+p.w&&player.vy>=0&&oldBottom<=p.y+6&&player.y+player.h>=p.y){
+        if(p.y<best)best=p.y;
+      }
+    }
+    if(best<Infinity){
+      player.y=best-player.h;player.vy=0;player.onGround=true;
+    }
+    if(player.y>H+100)hitPlayer();
+
+    for(const h of hazards){
+      let hy=h.y;
+      if(h.type==='drone')hy=h.y-58+Math.sin(state.time*(h.speed||3.1)+h.phase)*(h.amp||46);
+      if(collide(player,{x:h.x,y:hy,w:h.w,h:h.h})){hitPlayer();break;}
+    }
+
+    for(const t of tokens){
+      if(t.taken)continue;
+      if(collide(player,{x:t.x-t.r,y:t.y-t.r,w:t.r*2,h:t.r*2})){
+        t.taken=true;
+        state.knowledge++;
+        state.knowledgeByStage[t.stage]++;
+        showFact(zones[t.stage].facts[t.fact], t.stage);
+      }
+    }
+
+    const stage=Math.min(5,Math.floor(player.x/STAGE_W));
+    if(stage>state.stage&&state.quizDone[state.stage])state.stage=stage;
+
+    const gate=(state.stage+1)*STAGE_W-110;
+    if(!state.quizDone[state.stage]&&player.x>gate){
+      if(state.knowledgeByStage[state.stage]>=2){
+        player.x=gate-20;
+        openQuiz(state.stage);
+      }else{
+        player.x=gate-90;
+        fact.innerHTML=`<b>Gate locked:</b> collect ${2-state.knowledgeByStage[state.stage]} more knowledge node(s) in this zone.`;
+      }
+    }
+
+    if(state.quizDone[5]&&player.x>WORLD_W-250)finishRace();
+    updateHud();
+  }
+
+  function draw(){
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle='#050506';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    const tvScale=Math.min(canvas.width/W,canvas.height/H);
+    const tvOffsetX=(canvas.width-W*tvScale)/2;
+    const tvOffsetY=(canvas.height-H*tvScale)/2;
+    ctx.setTransform(tvScale,0,0,tvScale,tvOffsetX,tvOffsetY);
+    const cam=Math.max(0,Math.min(WORLD_W-W,player.x-220));
+    const vs=Math.min(5,Math.floor((cam+W/2)/STAGE_W));
+    const accent=['#c40022','#dd2946','#7d2b39','#5a3f81','#315d8c','#246f8e'][vs];
+
+    // Data center room
+    const grad=ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#08090b');
+    grad.addColorStop(.6,'#111318');
+    grad.addColorStop(1,'#171a1f');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,W,H);
+
+    // Ceiling cable trays
+    ctx.fillStyle='#24272d';
+    ctx.fillRect(0,0,W,24);
+    ctx.strokeStyle='#3a3e46';
+    ctx.lineWidth=3;
+    for(let x=-((cam*.18)%150);x<W+150;x+=150){
+      ctx.beginPath();
+      ctx.moveTo(x,24);
+      ctx.lineTo(x+20,55);
+      ctx.lineTo(x+105,55);
+      ctx.lineTo(x+125,24);
+      ctx.stroke();
+    }
+
+    // Fiber bundles
+    const fiberColors=['#6a6f78','#525761','#7d2b39','#315d8c'];
+    for(let r=0;r<4;r++){
+      ctx.strokeStyle=fiberColors[r];
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(0,68+r*5);
+      for(let x=0;x<=W;x+=80){
+        ctx.lineTo(x,68+r*5+Math.sin((x+cam*.15)/120+r)*3);
+      }
+      ctx.stroke();
+    }
+
+    // Server racks in parallax background
+    const rackOffset=(cam*.28)%150;
+    for(let i=-1;i<9;i++){
+      const x=i*150-rackOffset;
+      ctx.fillStyle='#1b1e23';
+      ctx.fillRect(x,110,118,240);
+      ctx.strokeStyle='#353942';
+      ctx.lineWidth=2;
+      ctx.strokeRect(x,110,118,240);
+
+      // rack header
+      ctx.fillStyle='#252931';
+      ctx.fillRect(x+5,116,108,20);
+      ctx.fillStyle=(i+vs)%4===0?accent:'#858b95';
+      ctx.font='bold 10px system-ui';
+      ctx.textAlign='center';
+      ctx.fillText(`RACK ${String((i+12+vs*7)%99).padStart(2,'0')}`,x+59,130);
+
+      // server faces
+      for(let u=0;u<10;u++){
+        const yy=145+u*18;
+        ctx.fillStyle=u%2===0?'#2a2e35':'#22262c';
+        ctx.fillRect(x+10,yy,98,13);
+        ctx.fillStyle=(u+i)%5===0?'#c40022':'#5d9a65';
+        ctx.fillRect(x+94,yy+4,5,4);
+        ctx.fillStyle='#585d66';
+        ctx.fillRect(x+15,yy+4,45,3);
+      }
+    }
+
+    // Raised floor / cooling aisle accents
+    ctx.fillStyle='#20232a';
+    ctx.fillRect(0,350,W,40);
+    ctx.strokeStyle='#343842';
+    for(let x=-((cam*.12)%55);x<W+55;x+=55){
+      ctx.beginPath();
+      ctx.moveTo(x,350);ctx.lineTo(x,390);ctx.stroke();
+    }
+    for(let y=350;y<=390;y+=20){
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+
+    ctx.save();
+    ctx.translate(-cam,0);
+
+    // Ground and elevated service platforms
+    platforms.forEach(p=>{
+      if(p.x+p.w<cam-20||p.x>cam+W+20)return;
+      if(p.y===GROUND){
+        ctx.fillStyle='#2c3037';
+        ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#444a54';
+        for(let x=p.x;x<p.x+p.w;x+=52){
+          ctx.fillRect(x,p.y,2,p.h);
+        }
+        ctx.fillStyle=accent;
+        ctx.fillRect(p.x,p.y,p.w,4);
+      }else{
+        ctx.fillStyle='#3a3f47';
+        ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.fillStyle='#17191d';
+        ctx.fillRect(p.x+9,p.y+5,p.w-18,p.h-8);
+        ctx.strokeStyle='#59606b';
+        ctx.strokeRect(p.x,p.y,p.w,p.h);
+      }
+    });
+
+    // Hazards: loose cabling / maintenance drones
+    hazards.forEach(h=>{
+      if(h.x<cam-80||h.x>cam+W+80)return;
+      let hy=h.y;
+      if(h.type==='drone')hy=h.y-58+Math.sin(state.time*(h.speed||3.1)+h.phase)*(h.amp||46);
+
+      if(h.type==='drone'){
+        ctx.fillStyle='#1a1d22';
+        ctx.fillRect(h.x,hy,h.w,h.h);
+        ctx.fillStyle='#c40022';
+        ctx.fillRect(h.x+7,hy+5,h.w-14,6);
+        ctx.fillStyle='#7d838d';
+        ctx.fillRect(h.x-9,hy+8,9,3);
+        ctx.fillRect(h.x+h.w,hy+8,9,3);
+        ctx.fillStyle='#eee';
+        ctx.fillRect(h.x+h.w/2-2,hy+14,4,4);
+      }else{
+        ctx.strokeStyle='#d2d4d8';
+        ctx.lineWidth=4;
+        ctx.beginPath();
+        ctx.moveTo(h.x,hy+h.h);
+        ctx.lineTo(h.x+8,hy+4);
+        ctx.lineTo(h.x+17,hy+h.h);
+        ctx.lineTo(h.x+26,hy+2);
+        ctx.lineTo(h.x+h.w,hy+h.h);
+        ctx.stroke();
+        ctx.fillStyle='#5b3d2b';
+        ctx.fillRect(h.x-4,hy+h.h-3,h.w+8,5);
+      }
+    });
+
+    // Licensing Ghost — one encounter per run
+    if(licenseGhost.active && licenseGhost.x>cam-120 && licenseGhost.x<cam+W+120){
+      const gx=licenseGhost.x, gy=licenseGhost.y;
+      ctx.save();
+      ctx.globalAlpha=.92;
+
+      // glow
+      ctx.fillStyle='rgba(196,0,34,.18)';
+      ctx.beginPath();
+      ctx.arc(gx+licenseGhost.w/2,gy+30,46,0,Math.PI*2);
+      ctx.fill();
+
+      // ghost body
+      ctx.fillStyle='#e8e9ed';
+      ctx.beginPath();
+      ctx.arc(gx+26,gy+22,24,Math.PI,0);
+      ctx.lineTo(gx+50,gy+53);
+      ctx.lineTo(gx+41,gy+45);
+      ctx.lineTo(gx+33,gy+55);
+      ctx.lineTo(gx+25,gy+45);
+      ctx.lineTo(gx+17,gy+55);
+      ctx.lineTo(gx+8,gy+45);
+      ctx.lineTo(gx+2,gy+53);
+      ctx.closePath();
+      ctx.fill();
+
+      // eyes
+      ctx.fillStyle='#16161a';
+      ctx.fillRect(gx+16,gy+19,6,9);
+      ctx.fillRect(gx+31,gy+19,6,9);
+
+      // red license badge
+      ctx.fillStyle='#c40022';
+      ctx.fillRect(gx+8,gy+31,36,12);
+      ctx.fillStyle='#fff';
+      ctx.font='bold 7px system-ui';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText('LICENSE',gx+26,gy+37);
+
+      // chase label
+      ctx.fillStyle='rgba(0,0,0,.72)';
+      ctx.fillRect(gx-20,gy-26,92,18);
+      ctx.fillStyle='#fff';
+      ctx.font='bold 10px system-ui';
+      ctx.fillText('LICENSING GHOST',gx+26,gy-17);
+
+      ctx.restore();
+    }
+
+    // Knowledge nodes rendered like glowing rack status / console icons
+    tokens.forEach(t=>{
+      if(t.taken||t.x<cam-80||t.x>cam+W+80)return;
+      ctx.fillStyle='rgba(196,0,34,.16)';
+      ctx.beginPath();ctx.arc(t.x,t.y,27,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#e8e9eb';
+      ctx.fillRect(t.x-15,t.y-19,30,38);
+      ctx.strokeStyle=accent;
+      ctx.lineWidth=4;
+      ctx.strokeRect(t.x-15,t.y-19,30,38);
+      ctx.fillStyle=accent;
+      ctx.font='bold 18px system-ui';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText('i',t.x,t.y);
+    });
+
+    // Secured cage gates
+    for(let s=0;s<6;s++){
+      const gx=(s+1)*STAGE_W-75;
+      if(gx<cam-100||gx>cam+W+100)continue;
+      ctx.fillStyle=state.quizDone[s]?'#315f3f':'#781629';
+      ctx.fillRect(gx,GROUND-138,18,138);
+      ctx.fillRect(gx+85,GROUND-138,18,138);
+      ctx.strokeStyle='#707680';
+      ctx.lineWidth=3;
+      for(let xx=gx+25;xx<gx+85;xx+=12){
+        ctx.beginPath();ctx.moveTo(xx,GROUND-130);ctx.lineTo(xx,GROUND-5);ctx.stroke();
+      }
+      ctx.fillStyle='#0f1114';
+      ctx.fillRect(gx-12,GROUND-168,127,25);
+      ctx.fillStyle='#fff';
+      ctx.font='bold 12px system-ui';
+      ctx.textAlign='center';
+      ctx.fillText('SECURE ZONE',gx+51,GROUND-151);
+    }
+
+    // Stylized Josh avatar
+    ctx.save();
+    ctx.translate(player.x,player.y);
+    ctx.fillStyle='#16161a';ctx.fillRect(5,15,20,19);
+    ctx.fillStyle='#c40022';ctx.fillRect(3,24,24,15);
+    ctx.fillStyle='#d7b08a';ctx.fillRect(7,2,17,15);
+    ctx.fillStyle='#1a1a1e';ctx.fillRect(7,0,18,5);
+    ctx.fillStyle='#fff';ctx.fillRect(18,7,3,3);
+    ctx.fillStyle='#c40022';ctx.fillRect(3,34,9,10);
+    ctx.fillRect(19,34,9,10);
+    ctx.restore();
+
+    ctx.restore();
+
+
+    // Narrative markers: hyperscaler start and Rackspace Cloud destination
+    if(cam < 1100){
+      ctx.save();
+      ctx.translate(-cam,0);
+      ctx.fillStyle='rgba(0,0,0,.78)';
+      ctx.fillRect(45,82,300,76);
+      ctx.fillStyle='#e2e2e6';
+      ctx.font='bold 12px system-ui';
+      ctx.textAlign='left';
+      ctx.fillText('HYPERSCALER START',65,105);
+      ctx.fillStyle='#9ea2aa';
+      ctx.font='13px system-ui';
+      ctx.fillText('Lock-in • limited control • rising complexity',65,128);
+      ctx.fillStyle='#c40022';
+      ctx.fillText('ESCAPE →',65,149);
+      ctx.restore();
+    }
+
+    if(cam > WORLD_W-W-1200){
+      const rx=WORLD_W-300;
+      ctx.save();
+      ctx.translate(-cam,0);
+      ctx.fillStyle='rgba(196,0,34,.16)';
+      ctx.fillRect(rx-145,92,275,150);
+      ctx.strokeStyle='#c40022';
+      ctx.lineWidth=4;
+      ctx.strokeRect(rx-145,92,275,150);
+      ctx.fillStyle='#fff';
+      ctx.font='bold 25px system-ui';
+      ctx.textAlign='center';
+      ctx.fillText('RACKSPACE',rx-8,135);
+      ctx.fillStyle='#f35a68';
+      ctx.font='bold 20px system-ui';
+      ctx.fillText('CLOUD',rx-8,163);
+      ctx.fillStyle='#d7d7dc';
+      ctx.font='13px system-ui';
+      ctx.fillText('VCF Cloud destination',rx-8,196);
+      ctx.fillStyle='#c40022';
+      ctx.fillRect(rx-75,214,134,7);
+      ctx.restore();
+    }
+
+    // Data center zone banner
+    ctx.fillStyle='rgba(0,0,0,.74)';
+    ctx.fillRect(14,14,345,48);
+    ctx.fillStyle='#f35a68';
+    ctx.font='bold 11px system-ui';
+    ctx.textAlign='left';
+    ctx.fillText('RACKSPACE DATA CENTER',27,32);
+    ctx.fillStyle='#fff';
+    ctx.font='bold 18px system-ui';
+    ctx.fillText(`ZONE ${state.stage+1}: ${zones[state.stage].name}`,27,52);
+
+    const prog=Math.max(0,Math.min(1,player.x/WORLD_W));
+    ctx.fillStyle='rgba(255,255,255,.14)';
+    ctx.fillRect(385,28,590,12);
+    ctx.fillStyle=accent;
+    ctx.fillRect(385,28,590*prog,12);
+
+    // Cooling airflow particles
+    ctx.fillStyle='rgba(170,210,255,.10)';
+    for(let i=0;i<18;i++){
+      const x=(i*83 + state.time*16)%W;
+      const y=90+(i*37)%240;
+      ctx.fillRect(x,y,12,1);
+    }
+  }
+
+  let last=performance.now();
+  function loop(now){
+    const dt=Math.min(.032,(now-last)/1000);
+    last=now;
+    pollGamepad();
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function setKey(k,v){
+    if(k==='ArrowLeft'||k==='a'||k==='A')keyboard.left=v;
+    if(k==='ArrowRight'||k==='d'||k==='D')keyboard.right=v;
+    if(k==='ArrowUp'||k==='w'||k==='W'||k===' ')keyboard.jump=v;
+    if(k==='Shift')keyboard.boost=v;
+    keys.left=keyboard.left;
+    keys.right=keyboard.right;
+    if(v && (k==='ArrowUp'||k==='w'||k==='W'||k===' ')) keys.jump=true;
+    keys.boost=keyboard.boost;
+  }
+
+  adminOverlay.addEventListener('keydown',e=>{
+    if(adminOverlay.classList.contains('hidden')) return;
+    if(e.key==='Escape'){ e.preventDefault(); closeAdminOverlay(); return; }
+    if(e.key==='Backspace'){ e.preventDefault(); handleAdminKey('BACK'); return; }
+    if(e.key==='Enter'){ e.preventDefault(); handleAdminKey('SUBMIT'); return; }
+    if(/^[a-zA-Z]$/.test(e.key)){ e.preventDefault(); handleAdminKey(e.key.toUpperCase()); }
+  });
+
+  app.addEventListener('keydown',e=>{
+    if(!licenseOverlay.classList.contains('hidden') && (e.key==='Enter'||e.key===' ')){
+      e.preventDefault();
+      dismissLicenseOverlay();
+      return;
+    }
+    if(['ArrowLeft','ArrowRight','ArrowUp',' ','Shift','a','A','d','D','w','W'].includes(e.key)){
+      e.preventDefault();setKey(e.key,true);
+    }
+  });
+  app.addEventListener('keyup',e=>setKey(e.key,false));
+
+
+  finishName.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      submitFinishName();
+    }
+  });
+
+  racerPresets.addEventListener('change',()=>{
+    racerName.value=racerPresets.value;
+    if(overlayRacer) overlayRacer.textContent='Racer: '+racerPresets.value;
+  });
+
+  licenseContinueBtn.addEventListener('click',dismissLicenseOverlay);
+  clearLeaderboardBtn.addEventListener('click',openAdminOverlay);
+  adminCancelBtn.addEventListener('click',closeAdminOverlay);
+
+  resultsRaceAgainBtn.addEventListener('click',resetRace);
+  startBtn.addEventListener('click',resetRace);
+  if(overlayStartBtn) overlayStartBtn.addEventListener('click',resetRace);
+  pauseBtn.addEventListener('click',()=>{
+    state.paused=!state.paused;
+    pauseBtn.textContent=state.paused?'Resume':'Pause';
+  });
+
+  function bindHold(id,key){
+    const b=$(id);
+    const on=e=>{e.preventDefault();keys[key]=true;keyboard[key]=true;app.focus()};
+    const off=e=>{e.preventDefault();keys[key]=false;keyboard[key]=false};
+    ['pointerdown'].forEach(ev=>b.addEventListener(ev,on));
+    ['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,off));
+  }
+  bindHold('leftBtn','left');
+  bindHold('rightBtn','right');
+  bindHold('turboBtn','boost');
+  $('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();keys.jump=true;keyboard.jump=true;app.focus()});
+  $('jumpBtn').addEventListener('pointerup',e=>{e.preventDefault();keys.jump=false;keyboard.jump=false});
+
+  window.addEventListener('gamepadconnected',e=>{
+    activeGamepadIndex=e.gamepad.index;
+    if(gamepadStatus) gamepadStatus.textContent=`Controller ready · ${e.gamepad.id}`;
+    // WebKit may reveal the controller only after the first controller interaction.
+    // If that first interaction is a face button on the start screen, treat it as Start.
+    if(!startOverlay.classList.contains('hidden') && anyConfirm(e.gamepad)) resetRace();
+  });
+
+  window.addEventListener('gamepaddisconnected',e=>{
+    if(activeGamepadIndex===e.gamepad.index) activeGamepadIndex=null;
+    if(gamepadStatus) gamepadStatus.textContent='Controller disconnected. Press a button after reconnecting.';
+  });
+
+  loadLeaderboard();
+  updateHud();
+})();
+</script>
+</body>
+</html>
