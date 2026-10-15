@@ -84,3 +84,7 @@ The game now opens on an 8-bit Rackspace-themed splash screen with two controlle
 - **Leaderboard**
 
 Use the D-pad or left stick to change the menu selection and A/Cross to confirm. The leaderboard menu reads the same shared server-side scores used during the race. The UI uses an original pixel-art Rackspace treatment and retro styling throughout the game.
+
+Required VCF Cloud quiz question:
+- The Facility Entry checkpoint asks which solution provides a fully managed VMware Cloud Foundation environment with scalable, secure private cloud capacity.
+- Correct answer: Rackspace VCF Cloud.
