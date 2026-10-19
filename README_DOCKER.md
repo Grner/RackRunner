@@ -117,3 +117,9 @@ LEADERBOARD_SESSION_HOURS: 8
 ```
 
 Admin login creates an HTTP-only session cookie. Only an authenticated admin can use the reset control on the dedicated leaderboard site. The older in-game `RACK` reset flow remains compatible.
+
+
+### Controller jump debounce
+- A/Cross now uses a release latch: one physical press produces one jump.
+- The button must be released for several frames before another jump can trigger.
+- Airborne jump presses are no longer queued and cannot cause an automatic second jump on landing.

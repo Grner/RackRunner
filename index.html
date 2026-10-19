@@ -739,6 +739,9 @@
     // One random Licensing Ghost encounter per run.
     // Spawn between roughly 28% and 72% of the course so it never appears immediately
     // and does not wait until the finish line.
+    jumpButtonLatched=false;
+    jumpReleaseFrames=0;
+    keys.jump=false;
     licenseGhost.active=false;
     licenseGhost.triggered=false;
     licenseGhost.caught=false;
@@ -1009,6 +1012,8 @@
   let quizSelection=0;
   let activeGamepadIndex=null;
   let prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false,music:false};
+  let jumpButtonLatched=false;
+  let jumpReleaseFrames=0;
 
   function highlightQuizSelection(){
     const buttons=[...$('quizAnswers').querySelectorAll('button')];
@@ -1032,6 +1037,14 @@
     return [0,1,2,3].some(i=>buttonPressed(gp,i));
   }
 
+  function gameplayJumpPressed(gp){
+    // Use the primary face button for gameplay jumps. On standard mappings this is A/Cross (index 0).
+    // For non-standard controllers, fall back to the first active face button.
+    if(gp?.mapping==='standard') return buttonPressed(gp,0);
+    if(buttonPressed(gp,0)) return true;
+    return [1,2,3].some(i=>buttonPressed(gp,i));
+  }
+
   function getActiveGamepad(){
     if(!navigator.getGamepads) return null;
     const pads=navigator.getGamepads();
@@ -1047,6 +1060,9 @@
     if(!gp){
       if(gamepadStatus) gamepadStatus.textContent='Controller: press any controller button to activate in Safari.';
       prevPad={confirm:false,left:false,right:false,up:false,down:false,pause:false,admin:false,music:false};
+      jumpButtonLatched=false;
+      jumpReleaseFrames=0;
+      keys.jump=false;
       return;
     }
 
@@ -1136,7 +1152,21 @@
 
     keys.left=keyboard.left || buttonPressed(gp,14) || ax0<-.28;
     keys.right=keyboard.right || buttonPressed(gp,15) || ax0>.28;
-    if(edge('confirm')) keys.jump=true;
+
+    // One physical A/Cross press = one jump.
+    // Require several clean release frames before re-arming to suppress browser/controller bounce.
+    const jumpPressedNow=gameplayJumpPressed(gp);
+    if(jumpPressedNow){
+      jumpReleaseFrames=0;
+      if(!jumpButtonLatched){
+        keys.jump=true;
+        jumpButtonLatched=true;
+      }
+    }else{
+      jumpReleaseFrames++;
+      if(jumpReleaseFrames>=3) jumpButtonLatched=false;
+    }
+
     keys.boost=keyboard.boost || buttonPressed(gp,1)||buttonPressed(gp,5)||buttonPressed(gp,7);
     if(edge('pause')) togglePauseMenu();
     prevPad=now;
@@ -1173,8 +1203,14 @@
     state.boost=Math.max(0,Math.min(100,state.boost+(boosting?-30:11)*dt));
 
     player.vx=(keys.right?speed:0)-(keys.left?speed:0);
-    if(keys.jump&&player.onGround){
-      player.vy=-560;player.onGround=false;keys.jump=false;
+    if(keys.jump){
+      if(player.onGround){
+        player.vy=-560;
+        player.onGround=false;
+      }
+      // Always consume the request this frame. Do not queue a held/airborne press
+      // and fire another jump automatically when the player lands.
+      keys.jump=false;
     }
 
     player.vy+=1280*dt;
