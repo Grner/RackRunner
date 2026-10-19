@@ -55,6 +55,7 @@
         <h2>Admin Controls</h2>
         <p class="mini">Contact information is private and only visible here after login.</p>
         <button id="showContactsBtn" class="btn wide" type="button">MANAGE RACER CONTACTS</button>
+        <button id="exportCsvBtn" class="btn secondary wide" type="button" style="margin-top:10px">EXPORT CSV</button>
         <button id="resetBtn" class="btn danger wide" type="button" style="margin-top:10px">RESET LEADERBOARD</button>
         <button id="logoutBtn" class="btn secondary wide" type="button" style="margin-top:10px">LOG OUT</button>
         <div id="adminStatus" class="status"></div>
@@ -102,6 +103,31 @@ let publicScores=[],adminRacers=[],adminAuthenticated=false,selectedRacerId=null
 function fmt(sec){sec=Math.max(0,Number(sec)||0);const m=Math.floor(sec/60),s=sec-m*60;return `${m}:${s.toFixed(1).padStart(4,'0')}`}
 function fmtDate(value){if(!value)return 'Timestamp unavailable';const d=new Date(value);if(Number.isNaN(d.getTime()))return 'Timestamp unavailable';return d.toLocaleString([], {year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function csvCell(v){const s=String(v??'');return `"${s.replace(/"/g,'""')}"`}
+function exportAdminCsv(){
+  if(!adminAuthenticated){adminStatus.className='status error';adminStatus.textContent='Admin login required.';return}
+  const rows=[['Rank','Racer Name','Time Seconds','Formatted Time','Hits','Achieved At','Contact Name','Title','Email','Company','Notes']];
+  adminRacers.forEach((r,i)=>{
+    const c=r.contact||{};
+    rows.push([
+      i+1,r.name,Number(r.time||0).toFixed(3),fmt(r.time),Number(r.hits||0),r.achieved_at||'',
+      c.name||r.name||'',c.title||'',c.email||'',c.company||'',c.notes||''
+    ]);
+  });
+  const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  a.href=url;
+  a.download=`rackspace-cloud-race-leaderboard-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  adminStatus.className='status good';
+  adminStatus.textContent=`Exported ${adminRacers.length} racer record${adminRacers.length===1?'':'s'} to CSV.`;
+}
 async function api(path,options={}){const r=await fetch(path,{cache:'no-store',...options});let data=null;try{data=await r.json()}catch(_){data={}}if(!r.ok){const e=new Error(data?.error||`Request failed (${r.status})`);e.status=r.status;throw e}return data}
 function renderPublic(){const scores=Array.isArray(publicScores)?publicScores:[];emptyState.hidden=scores.length>0;scoreTable.hidden=scores.length===0;scoreBody.innerHTML=scores.map((r,i)=>`<tr class="${i===0?'rank1':''}"><td>${i+1}</td><td>${esc(r.name)}</td><td class="right">${fmt(r.time)}</td><td class="date-col right">${esc(fmtDate(r.achieved_at))}</td></tr>`).join('');if(scores.length){const r=scores[0];fastestTime.textContent=fmt(r.time);fastestName.textContent=r.name;fastestDate.textContent=`Set ${fmtDate(r.achieved_at)}`}else{fastestTime.textContent='--:--.-';fastestName.textContent='No scores yet';fastestDate.textContent='Complete a run to set the record.'}}
 function contactComplete(r){const c=r.contact||{};return !!(c.email||c.company||c.title||c.notes)}
@@ -114,6 +140,7 @@ function closeContact(){contactModal.classList.remove('show');selectedRacerId=nu
 $('refreshBtn').addEventListener('click',async()=>{try{await loadScores();if(adminAuthenticated)await loadAdminRacers()}catch(e){}}
 );
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();loginStatus.className='status';loginStatus.textContent='Signing in…';try{await api('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value,password:$('password').value})});loginStatus.textContent='';$('password').value='';await checkAdmin();await loadAdminRacers();contactManager.classList.add('show');contactManager.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){loginStatus.className='status error';loginStatus.textContent='Invalid username or password.'}});
+$('exportCsvBtn').addEventListener('click',async()=>{try{if(!adminRacers.length)await loadAdminRacers();exportAdminCsv()}catch(e){adminStatus.className='status error';adminStatus.textContent=e.message||'CSV export failed.'}});
 $('showContactsBtn').addEventListener('click',async()=>{contactManager.classList.add('show');managerStatus.textContent='Loading racer records…';try{await loadAdminRacers();managerStatus.textContent='';contactManager.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){managerStatus.className='status error';managerStatus.textContent=e.message}});
 $('hideContactsBtn').addEventListener('click',()=>contactManager.classList.remove('show'));
 $('logoutBtn').addEventListener('click',async()=>{await api('/api/admin/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{});adminStatus.textContent='';await checkAdmin()});

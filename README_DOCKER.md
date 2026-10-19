@@ -155,3 +155,9 @@ Tested in v24:
 - saved contact persistence
 - public API privacy after contact save
 - leaderboard page JavaScript syntax
+
+### CSV export
+- After admin login on `/leaderboard`, use **EXPORT CSV** under Admin Controls.
+- The export includes rank, racer name, raw and formatted time, hits, achieved date/time, contact name, title, email, company, and notes.
+- Contact data remains admin-only; the export button is not shown to public visitors.
+- The generated CSV includes a UTF-8 BOM for good compatibility with Excel.
