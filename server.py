@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import hashlib
 import os
 import secrets
 import threading
@@ -39,6 +40,32 @@ def normalize_timestamp(value):
         return None
 
 
+def clean_text(value, limit):
+    return str(value or '').strip()[:limit]
+
+
+def stable_score_id(item, name, time_value, achieved_at):
+    existing = clean_text(item.get('id', ''), 80)
+    if existing:
+        return existing
+    seed = f"{name}|{time_value:.3f}|{achieved_at or ''}".encode('utf-8')
+    return 'legacy-' + hashlib.sha256(seed).hexdigest()[:16]
+
+
+def public_score(item):
+    return {
+        'id': item.get('id'),
+        'name': item.get('name'),
+        'time': item.get('time'),
+        'hits': item.get('hits', 0),
+        'achieved_at': item.get('achieved_at'),
+    }
+
+
+def public_scores(items):
+    return [public_score(item) for item in items]
+
+
 def sanitize_scores(raw):
     clean = []
     if not isinstance(raw, list):
@@ -46,7 +73,7 @@ def sanitize_scores(raw):
     for item in raw:
         if not isinstance(item, dict):
             continue
-        name = str(item.get('name', '')).strip()[:18]
+        name = clean_text(item.get('name', ''), 18)
         try:
             time_value = float(item.get('time', 0))
             hits = int(item.get('hits', 0))
@@ -54,11 +81,21 @@ def sanitize_scores(raw):
             continue
         if not name or time_value <= 0 or time_value > 36000:
             continue
+        achieved_at = normalize_timestamp(item.get('achieved_at'))
+        contact = item.get('contact') if isinstance(item.get('contact'), dict) else {}
         clean.append({
+            'id': stable_score_id(item, name, time_value, achieved_at),
             'name': name,
             'time': round(time_value, 3),
             'hits': max(0, hits),
-            'achieved_at': normalize_timestamp(item.get('achieved_at')),
+            'achieved_at': achieved_at,
+            'contact': {
+                'name': clean_text(contact.get('name') or name, 80),
+                'title': clean_text(contact.get('title'), 120),
+                'email': clean_text(contact.get('email'), 180),
+                'company': clean_text(contact.get('company'), 160),
+                'notes': clean_text(contact.get('notes'), 2000),
+            },
         })
     clean.sort(key=lambda x: x['time'])
     return clean[:MAX_SCORES]
@@ -141,10 +178,28 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == '/api/leaderboard':
+            self.send_json(200, public_scores(load_scores()))
+            return
+        if path == '/api/admin/racers':
+            if not self.is_admin():
+                self.send_json(403, {'error': 'Admin login required'})
+                return
             self.send_json(200, load_scores())
             return
+        if path.startswith('/api/admin/racers/'):
+            if not self.is_admin():
+                self.send_json(403, {'error': 'Admin login required'})
+                return
+            racer_id = path[len('/api/admin/racers/'):].strip()
+            racer = next((item for item in load_scores() if item.get('id') == racer_id), None)
+            if not racer:
+                self.send_json(404, {'error': 'Racer not found'})
+                return
+            self.send_json(200, racer)
+            return
         if path == '/api/admin/status':
-            self.send_json(200, {'authenticated': self.is_admin(), 'username': ADMIN_USERNAME if self.is_admin() else None})
+            authenticated = self.is_admin()
+            self.send_json(200, {'authenticated': authenticated, 'username': ADMIN_USERNAME if authenticated else None})
             return
         if path == '/healthz':
             self.send_json(200, {'ok': True})
@@ -155,9 +210,39 @@ class Handler(SimpleHTTPRequestHandler):
             self.path = '/index.html'
         super().do_GET()
 
+
+    def update_racer_contact(self, racer_id, data):
+        if not self.is_admin():
+            self.send_json(403, {'error': 'Admin login required'})
+            return
+        racer_id = str(racer_id or '').strip()
+        if not racer_id:
+            self.send_json(400, {'error': 'Missing racer id'})
+            return
+        with LOCK:
+            scores = load_scores_unlocked()
+            target = next((item for item in scores if item.get('id') == racer_id), None)
+            if not target:
+                self.send_json(404, {'error': 'Racer not found'})
+                return
+            contact = target.setdefault('contact', {})
+            contact['name'] = clean_text(data.get('name') or target.get('name'), 80)
+            contact['title'] = clean_text(data.get('title'), 120)
+            contact['email'] = clean_text(data.get('email'), 180)
+            contact['company'] = clean_text(data.get('company'), 160)
+            contact['notes'] = clean_text(data.get('notes'), 2000)
+            saved = save_scores_unlocked(scores)
+            updated = next((item for item in saved if item.get('id') == racer_id), None)
+        self.send_json(200, {'ok': True, 'racer': updated})
+
     def do_POST(self):
         path = urlparse(self.path).path
         data = self.read_json()
+
+        if path.startswith('/api/admin/racers/'):
+            racer_id = path[len('/api/admin/racers/'):].strip()
+            self.update_racer_contact(racer_id, data)
+            return
 
         if path == '/api/admin/login':
             username = str(data.get('username', ''))
@@ -196,14 +281,23 @@ class Handler(SimpleHTTPRequestHandler):
         achieved_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         with LOCK:
             current = load_scores_unlocked()
+            score_id = 'race-' + secrets.token_urlsafe(9)
             current.append({
+                'id': score_id,
                 'name': name,
                 'time': time_value,
                 'hits': max(0, hits),
                 'achieved_at': achieved_at,
+                'contact': {
+                    'name': name,
+                    'title': '',
+                    'email': '',
+                    'company': '',
+                    'notes': '',
+                },
             })
             saved = save_scores_unlocked(current)
-        self.send_json(201, {'leaderboard': saved, 'achieved_at': achieved_at})
+        self.send_json(201, {'leaderboard': public_scores(saved), 'achieved_at': achieved_at, 'id': score_id})
 
     def do_DELETE(self):
         path = urlparse(self.path).path
@@ -220,6 +314,15 @@ class Handler(SimpleHTTPRequestHandler):
         with LOCK:
             save_scores_unlocked([])
         self.send_json(200, {'ok': True, 'leaderboard': []})
+
+    def do_PUT(self):
+        path = urlparse(self.path).path
+        prefix = '/api/admin/racers/'
+        if not path.startswith(prefix):
+            self.send_json(404, {'error': 'Not found'})
+            return
+        racer_id = path[len(prefix):].strip()
+        self.update_racer_contact(racer_id, self.read_json())
 
 
 if __name__ == '__main__':

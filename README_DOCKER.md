@@ -123,3 +123,35 @@ Admin login creates an HTTP-only session cookie. Only an authenticated admin can
 - A/Cross now uses a release latch: one physical press produces one jump.
 - The button must be released for several frames before another jump can trigger.
 - Airborne jump presses are no longer queued and cannot cause an automatic second jump on landing.
+
+
+## Racer contact details
+- Public leaderboard visitors only see racer name, time, and achieved date/time.
+- After admin login, racer names become clickable.
+- Admins can view/edit Contact Name, Title, Email Address, Company, and Notes.
+- Contact fields are stored with the score in the persistent Docker volume but are excluded from the public leaderboard API.
+- Resetting the leaderboard also removes the associated contact records.
+
+## v24 Racer Contact Manager
+The leaderboard admin UI was rebuilt to make contact management explicit and visible.
+
+1. Open `/leaderboard`.
+2. Log in with the admin account.
+3. The **Racer Contact Manager** appears automatically. You can also click **MANAGE RACER CONTACTS**.
+4. Each racer has a **VIEW / EDIT** button.
+5. The button opens a large contact dialog with Contact Name, Title, Email Address, Company, and Notes.
+6. Click **SAVE CONTACT DETAILS**.
+
+Contact fields are admin-only. The public leaderboard API does not return them.
+
+Tested in v24:
+- leaderboard page serves successfully
+- score submission and timestamps
+- unauthenticated contact access rejected
+- admin login
+- private racer list
+- individual private racer lookup
+- contact save via POST
+- saved contact persistence
+- public API privacy after contact save
+- leaderboard page JavaScript syntax
