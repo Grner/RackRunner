@@ -172,6 +172,7 @@
         <div class="eyebrow">Rackspace Cloud Race</div>
         <h2>High Scores</h2>
         <ol id="splashLeaderboardList"><li><span>Loading scores…</span><span></span></li></ol>
+        <a href="/leaderboard" class="primary pixel-button" style="display:block;width:100%;text-align:center;text-decoration:none;margin-bottom:10px">★ OPEN FULL LEADERBOARD SITE</a>
         <button id="splashBackBtn" type="button" class="primary pixel-button" style="width:100%">◀ BACK TO MENU</button>
         <div class="finish-help">Controller: A / Cross, B / Circle, or Menu / Start returns to the title screen</div>
       </div>
@@ -224,7 +225,8 @@
         <h2 id="resultsTitle">Leaderboard</h2>
         <div id="resultsScore" class="finish-score"></div>
         <ol id="resultsLeaderboard" class="resultsLeaderboard"></ol>
-        <button id="resultsRaceAgainBtn" type="button" class="primary" style="width:100%;margin-top:14px">Race Again</button>
+        <a href="/leaderboard" style="display:block;text-align:center;color:#fff;margin-top:14px;text-decoration:none;border:1px solid #666;padding:10px">View Full Leaderboard Site</a>
+        <button id="resultsRaceAgainBtn" type="button" class="primary" style="width:100%;margin-top:10px">Race Again</button>
         <div class="finish-help">Controller: A / Cross races again · Y / Triangle opens leaderboard admin</div>
       </div>
     </div>
@@ -496,6 +498,13 @@
     const s=sec-m*60;
     return `${m}:${s.toFixed(1).padStart(4,'0')}`;
   }
+  function fmtScoreDate(value){
+    if(!value) return '';
+    const d=new Date(value);
+    if(Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+  }
+
   const totalTime=()=>state.time+state.penalty;
 
   let musicEnabled=true;
@@ -589,7 +598,7 @@
       splashLeaderboardList.innerHTML='<li><span>NO SCORES YET</span><span>—</span></li>';
       return;
     }
-    splashLeaderboardList.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${String(i+1).padStart(2,'0')}. ${escapeHtml(r.name).toUpperCase()}</b></span><span>${fmt(Number(r.time))}</span></li>`).join('');
+    splashLeaderboardList.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${String(i+1).padStart(2,'0')}. ${escapeHtml(r.name).toUpperCase()}</b>${i===0&&fmtScoreDate(r.achieved_at)?`<br><small style="color:#a9a9b2">${escapeHtml(fmtScoreDate(r.achieved_at))}</small>`:''}</span><span>${fmt(Number(r.time))}</span></li>`).join('');
   }
 
   async function openSplashLeaderboard(){
@@ -628,7 +637,7 @@
       resultsLeaderboard.innerHTML='<li><span>No scores yet.</span></li>';
       return;
     }
-    resultsLeaderboard.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${i+1}. ${escapeHtml(r.name)}</b></span><span>${fmt(Number(r.time))}</span></li>`).join('');
+    resultsLeaderboard.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${i+1}. ${escapeHtml(r.name)}</b>${i===0&&fmtScoreDate(r.achieved_at)?`<br><small style="color:#a9a9b2">${escapeHtml(fmtScoreDate(r.achieved_at))}</small>`:''}</span><span>${fmt(Number(r.time))}</span></li>`).join('');
   }
 
   function renderPauseLeaderboard(){
@@ -637,7 +646,7 @@
       pauseLeaderboard.innerHTML='<li><span>No scores yet.</span><span>—</span></li>';
       return;
     }
-    pauseLeaderboard.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${i+1}. ${escapeHtml(r.name)}</b></span><span>${fmt(Number(r.time))}</span></li>`).join('');
+    pauseLeaderboard.innerHTML=leaderboard.map((r,i)=>`<li><span><b>${i+1}. ${escapeHtml(r.name)}</b>${i===0&&fmtScoreDate(r.achieved_at)?`<br><small style="color:#a9a9b2">${escapeHtml(fmtScoreDate(r.achieved_at))}</small>`:''}</span><span>${fmt(Number(r.time))}</span></li>`).join('');
   }
 
   async function openPauseMenu(){

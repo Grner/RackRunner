@@ -126,3 +126,9 @@ Splash screen / 8-bit theme:
 - Controller: D-pad/stick selects, A/Cross confirms.
 - Shared leaderboard is viewable before starting a race.
 - Retro pixel styling is applied to menus, HUD, and overlays.
+
+Leaderboard site:
+- Browse to /leaderboard on the hosted server.
+- Fastest run displays racer name, run time, and date/time achieved.
+- Default admin login: username admin / password RACK.
+- Admin login is required to reset the board from the leaderboard site.

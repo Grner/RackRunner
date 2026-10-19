@@ -88,3 +88,32 @@ Use the D-pad or left stick to change the menu selection and A/Cross to confirm.
 Required VCF Cloud quiz question:
 - The Facility Entry checkpoint asks which solution provides a fully managed VMware Cloud Foundation environment with scalable, secure private cloud capacity.
 - Correct answer: Rackspace VCF Cloud.
+
+## Dedicated leaderboard site
+
+The container now serves a standalone leaderboard at:
+
+```text
+http://localhost:8080/leaderboard
+```
+
+The page shows the fastest run prominently, including the racer name, run time, and the date/time the score was recorded. Every newly submitted score gets a server-generated UTC timestamp; the browser displays it in the viewer's local time zone.
+
+### Leaderboard admin login
+
+Default credentials for the leaderboard admin section are:
+
+```text
+Username: admin
+Password: RACK
+```
+
+Change these for a hosted deployment in `docker-compose.yml` or through environment variables:
+
+```yaml
+LEADERBOARD_ADMIN_USERNAME: admin
+LEADERBOARD_PASSWORD: change-this-password
+LEADERBOARD_SESSION_HOURS: 8
+```
+
+Admin login creates an HTTP-only session cookie. Only an authenticated admin can use the reset control on the dedicated leaderboard site. The older in-game `RACK` reset flow remains compatible.

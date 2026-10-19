@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rackspace Cloud Race // Leaderboard</title>
+<style>
+:root{--red:#c40022;--bg:#070709;--panel:#131318;--line:#3b3b44;--text:#f4f4f6;--muted:#a9a9b3;--good:#75dc8b}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:"Courier New",ui-monospace,monospace}body{padding:32px 20px;background-image:linear-gradient(rgba(196,0,34,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:8px 8px}.wrap{max-width:1100px;margin:0 auto}.brand{display:flex;align-items:center;gap:18px;margin-bottom:24px}.mark{width:64px;height:64px;background:var(--red);box-shadow:6px 6px 0 #000;display:grid;place-items:center;font-weight:900;font-size:30px}.title{font-size:clamp(30px,5vw,64px);line-height:.95;font-weight:900;letter-spacing:.05em;text-shadow:4px 4px 0 #681022,7px 7px 0 #000}.title span{color:#e31b3d}.sub{color:var(--muted);margin-top:8px}.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.7fr);gap:20px}.card{background:rgba(19,19,24,.96);border:3px solid var(--line);box-shadow:8px 8px 0 #000;padding:22px}.card h2{margin:0 0 14px;text-transform:uppercase;letter-spacing:.08em}.fastest{border-color:var(--red);margin-bottom:18px}.fastest .time{font-size:clamp(44px,6vw,84px);font-weight:900;color:#fff;line-height:1}.fastest .name{font-size:clamp(22px,2.3vw,36px);font-weight:900;color:#f45a6e;margin:8px 0}.fastest .date{color:#d2d2d8}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:12px 10px;border-bottom:1px solid #303038}.table th{color:var(--muted);font-size:12px;letter-spacing:.08em}.table td:nth-child(1),.table th:nth-child(1){width:52px}.table td:nth-child(3),.table th:nth-child(3){text-align:right}.table td:nth-child(4),.table th:nth-child(4){text-align:right;color:#c9c9d0}.rank1{color:#fff;font-weight:900}.login input{width:100%;margin:0 0 10px;padding:12px;background:#09090c;border:2px solid var(--line);color:#fff;font:inherit}.btn{width:100%;padding:12px 14px;border:2px solid #fff;background:var(--red);color:#fff;font:900 16px "Courier New",monospace;cursor:pointer;box-shadow:4px 4px 0 #000}.btn.secondary{background:#202027;border-color:#656570;margin-top:10px}.btn.danger{background:#7b1728;margin-top:12px}.status{min-height:24px;color:var(--muted);margin-top:10px}.admin-box{display:none}.admin-box.show{display:block}.link{display:inline-block;margin-top:22px;color:#fff;text-decoration:none;border-bottom:2px solid var(--red)}.empty{color:var(--muted);padding:20px 0}.mini{font-size:12px;color:var(--muted);line-height:1.5}.badge{display:inline-block;padding:4px 7px;border:1px solid #5d5d67;color:#ddd;font-size:11px;letter-spacing:.08em}.refresh{width:auto;padding:7px 10px;font-size:12px;box-shadow:none;background:#202027;border-color:#5a5a64}.headrow{display:flex;justify-content:space-between;gap:12px;align-items:center}.good{color:var(--good)}.error{color:#ff8b95}@media(max-width:820px){.grid{grid-template-columns:1fr}.table .date-col{display:none}body{padding:20px 12px}.card{padding:16px}}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="mark">R</div>
+    <div><div class="title"><span>RACK</span>SPACE CLOUD RACE</div><div class="sub">VCF Edition // Shared Leaderboard</div></div>
+  </div>
+
+  <div class="grid">
+    <main>
+      <section class="card fastest">
+        <div class="headrow"><span class="badge">FASTEST RUN</span><button id="refreshBtn" class="btn refresh" type="button">REFRESH</button></div>
+        <div id="fastestTime" class="time">--:--.-</div>
+        <div id="fastestName" class="name">No scores yet</div>
+        <div id="fastestDate" class="date">Complete a run to set the record.</div>
+      </section>
+
+      <section class="card">
+        <h2>Top Racers</h2>
+        <div id="emptyState" class="empty" hidden>No scores yet.</div>
+        <table class="table" id="scoreTable">
+          <thead><tr><th>#</th><th>Racer</th><th>Time</th><th class="date-col">Achieved</th></tr></thead>
+          <tbody id="scoreBody"></tbody>
+        </table>
+      </section>
+      <a class="link" href="/">← Back to the game</a>
+    </main>
+
+    <aside>
+      <section class="card login" id="loginCard">
+        <h2>Leaderboard Admin</h2>
+        <p class="mini">Sign in to reset the shared leaderboard. The public leaderboard remains view-only.</p>
+        <form id="loginForm">
+          <input id="username" name="username" autocomplete="username" value="admin" placeholder="Username" required>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" required>
+          <button class="btn" type="submit">LOGIN</button>
+        </form>
+        <div id="loginStatus" class="status"></div>
+      </section>
+
+      <section class="card admin-box" id="adminCard">
+        <h2>Admin Controls</h2>
+        <p class="mini">You are signed in. Resetting removes every saved score from the shared leaderboard.</p>
+        <button id="resetBtn" class="btn danger" type="button">RESET LEADERBOARD</button>
+        <button id="logoutBtn" class="btn secondary" type="button">LOG OUT</button>
+        <div id="adminStatus" class="status"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const fastestTime=$('fastestTime'),fastestName=$('fastestName'),fastestDate=$('fastestDate'),scoreBody=$('scoreBody'),scoreTable=$('scoreTable'),emptyState=$('emptyState');
+const loginCard=$('loginCard'),adminCard=$('adminCard'),loginStatus=$('loginStatus'),adminStatus=$('adminStatus');
+function fmt(sec){sec=Math.max(0,Number(sec)||0);const m=Math.floor(sec/60),s=sec-m*60;return `${m}:${s.toFixed(1).padStart(4,'0')}`}
+function fmtDate(value){if(!value)return 'Timestamp unavailable for this older score';const d=new Date(value);if(Number.isNaN(d.getTime()))return 'Timestamp unavailable';return d.toLocaleString([], {year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})}
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loadScores(){const r=await fetch('/api/leaderboard',{cache:'no-store'});if(!r.ok)throw new Error('Leaderboard unavailable');const scores=await r.json();render(scores);return scores}
+function render(scores){scores=Array.isArray(scores)?scores:[];emptyState.hidden=scores.length>0;scoreTable.hidden=scores.length===0;scoreBody.innerHTML=scores.map((r,i)=>`<tr class="${i===0?'rank1':''}"><td>${i+1}</td><td>${esc(r.name)}</td><td>${fmt(r.time)}</td><td class="date-col">${esc(fmtDate(r.achieved_at))}</td></tr>`).join('');if(scores.length){const r=scores[0];fastestTime.textContent=fmt(r.time);fastestName.textContent=r.name;fastestDate.textContent=`Set ${fmtDate(r.achieved_at)}`;}else{fastestTime.textContent='--:--.-';fastestName.textContent='No scores yet';fastestDate.textContent='Complete a run to set the record.'}}
+async function checkAdmin(){const r=await fetch('/api/admin/status',{cache:'no-store'});const d=await r.json();loginCard.style.display=d.authenticated?'none':'block';adminCard.classList.toggle('show',!!d.authenticated)}
+$('refreshBtn').addEventListener('click',()=>loadScores().catch(()=>{}));
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();loginStatus.className='status';loginStatus.textContent='Signing in…';const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value,password:$('password').value})});if(!r.ok){loginStatus.className='status error';loginStatus.textContent='Invalid username or password.';return}loginStatus.textContent='';$('password').value='';await checkAdmin()});
+$('logoutBtn').addEventListener('click',async()=>{await fetch('/api/admin/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});adminStatus.textContent='';await checkAdmin()});
+$('resetBtn').addEventListener('click',async()=>{if(!confirm('Clear every score from the shared leaderboard?'))return;adminStatus.className='status';adminStatus.textContent='Resetting…';const r=await fetch('/api/leaderboard',{method:'DELETE',headers:{'Content-Type':'application/json'},body:'{}'});if(!r.ok){adminStatus.className='status error';adminStatus.textContent='Reset failed. Please sign in again.';await checkAdmin();return}adminStatus.className='status good';adminStatus.textContent='Leaderboard cleared.';await loadScores()});
+Promise.all([loadScores(),checkAdmin()]).catch(()=>{});
+setInterval(()=>loadScores().catch(()=>{}),15000);
+</script>
+</body>
+</html>

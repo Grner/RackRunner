@@ -5,7 +5,9 @@ services:
     ports:
       - "8080:8080"
     environment:
+      LEADERBOARD_ADMIN_USERNAME: admin
       LEADERBOARD_PASSWORD: RACK
+      LEADERBOARD_SESSION_HOURS: 8
     volumes:
       - rackspace_race_data:/data
     restart: unless-stopped
