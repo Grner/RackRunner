@@ -161,3 +161,20 @@ Tested in v24:
 - The export includes rank, racer name, raw and formatted time, hits, achieved date/time, contact name, title, email, company, and notes.
 - Contact data remains admin-only; the export button is not shown to public visitors.
 - The generated CSV includes a UTF-8 BOM for good compatibility with Excel.
+
+
+### Easier course balance
+- Reduced obstacle density across all six zones.
+- Difficulty now ramps gradually instead of adding large clusters of hazards.
+- Drones move slower and with less vertical travel.
+- Player movement is slightly faster and jumps have more airtime.
+- Hazard collision boxes are slightly more forgiving.
+- An obstacle hit adds 3 seconds instead of 5 seconds.
+- After a hit, the racer respawns nearby instead of at the beginning of the zone.
+- A short post-hit grace period prevents immediate repeat collisions.
+
+
+### Licensing Ghost hold
+- When the Licensing Ghost catches the racer, the licensing message is locked on screen for 2 seconds.
+- Continue input is disabled during the countdown.
+- After 2 seconds, A/Cross, Enter/Space, or the Continue button resumes the race.
