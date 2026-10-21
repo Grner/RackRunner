@@ -178,3 +178,17 @@ Tested in v24:
 - When the Licensing Ghost catches the racer, the licensing message is locked on screen for 2 seconds.
 - Continue input is disabled during the countdown.
 - After 2 seconds, A/Cross, Enter/Space, or the Continue button resumes the race.
+
+
+### Event-friendly easy mode
+- Course difficulty has been reduced significantly across all six stages.
+- Only three base hazards appear per stage, with very light additions later.
+- Drones are slower and move over a smaller vertical range.
+- Elevated platforms are wider and easier to land on.
+- Normal movement is faster; jumps are higher with more airtime.
+- Hazard collisions use smaller hitboxes.
+- Obstacle hits add only 1 second and respawn the racer just before the obstacle.
+- One VCF info node per zone is enough to unlock its quiz checkpoint.
+- The Licensing Ghost chase is slower, but its 2-second licensing hold remains.
+- The home screen now includes a complete How to Play guide.
+- After a score is submitted and the leaderboard is shown, Return Home/A-Cross resets the game to the title screen.

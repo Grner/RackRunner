@@ -105,6 +105,33 @@
   .stat small,.stat strong,.fact,.zone,#gamepadStatus{font-family:"Courier New",ui-monospace,monospace}
   .overlay .card:not(.license-card){border-radius:0}
 
+
+  .how-to-guide{
+    margin:14px auto 10px;
+    width:min(980px,92%);
+    border:2px solid #3b3b44;
+    background:rgba(9,9,11,.86);
+    padding:10px 12px;
+    text-align:left;
+  }
+  .how-to-title{
+    color:#f35a68;
+    font-weight:900;
+    letter-spacing:.14em;
+    font-size:clamp(12px,.9vw,17px);
+    margin-bottom:8px;
+    text-align:center;
+  }
+  .how-to-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:7px 12px;
+    font-size:clamp(10px,.72vw,14px);
+  }
+  .how-to-grid div{min-width:0}
+  .how-to-grid b{display:block;color:#fff;font-size:.92em;letter-spacing:.06em}
+  .how-to-grid span{display:block;color:#bfc0c7;line-height:1.25;margin-top:2px}
+  @media(max-width:900px){.how-to-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -164,7 +191,21 @@
           <button id="overlayStartBtn" class="menu-selected" type="button" data-menu-index="0">▶ START NEW GAME</button>
           <button id="splashLeaderboardBtn" type="button" data-menu-index="1">★ LEADERBOARD</button>
         </div>
-        <div class="splash-help"><b>CONTROLLER:</b> D-PAD / STICK = SELECT &nbsp;·&nbsp; A / CROSS = CONFIRM<br><b>GAME:</b> A / CROSS = JUMP &nbsp;·&nbsp; B / RT = TURBO &nbsp;·&nbsp; MENU / START = PAUSE + LEADERBOARD</div>
+
+        <div class="how-to-guide" aria-label="How to play">
+          <div class="how-to-title">HOW TO PLAY</div>
+          <div class="how-to-grid">
+            <div><b>MISSION</b><span>Escape hyperscaler lock-in and reach Rackspace Cloud.</span></div>
+            <div><b>MOVE</b><span>D-pad or left stick</span></div>
+            <div><b>JUMP</b><span>A / Cross</span></div>
+            <div><b>TURBO</b><span>B / Circle or RT</span></div>
+            <div><b>LEARN</b><span>Grab 1 glowing VCF info node in each zone.</span></div>
+            <div><b>CHECKPOINTS</b><span>Answer the question correctly to unlock the next zone.</span></div>
+            <div><b>LICENSING GHOST</b><span>It appears once per run. When caught, read the licensing message.</span></div>
+            <div><b>PAUSE</b><span>Menu / Start shows the live leaderboard.</span></div>
+          </div>
+        </div>
+        <div class="splash-help"><b>D-PAD / STICK</b> = SELECT &nbsp;·&nbsp; <b>A / CROSS</b> = CONFIRM</div>
       </div>
     </div>
     <div class="overlay hidden pixel-overlay" id="splashLeaderboardOverlay">
@@ -196,8 +237,8 @@
         <div style="border-left:4px solid #c40022;padding:10px 14px;background:#1d1d22;margin:14px 0">
           <b>Focus on the cloud platform — not the licensing paperwork.</b>
         </div>
-        <button id="licenseContinueBtn" type="button" class="primary" style="width:100%">Continue Race</button>
-        <div class="finish-help" style="margin-top:10px">Controller: press A / Cross to continue</div>
+        <button id="licenseContinueBtn" type="button" class="primary" style="width:100%" disabled>Continue in 2.0s</button>
+        <div id="licenseHoldStatus" class="finish-help" style="margin-top:10px">Licensing Ghost has you! Hold on…</div>
       </div>
     </div>
     <div class="overlay hidden" id="quizOverlay">
@@ -226,8 +267,8 @@
         <div id="resultsScore" class="finish-score"></div>
         <ol id="resultsLeaderboard" class="resultsLeaderboard"></ol>
         <a href="/leaderboard" style="display:block;text-align:center;color:#fff;margin-top:14px;text-decoration:none;border:1px solid #666;padding:10px">View Full Leaderboard Site</a>
-        <button id="resultsRaceAgainBtn" type="button" class="primary" style="width:100%;margin-top:10px">Race Again</button>
-        <div class="finish-help">Controller: A / Cross races again · Y / Triangle opens leaderboard admin</div>
+        <button id="resultsRaceAgainBtn" type="button" class="primary" style="width:100%;margin-top:10px">Return Home</button>
+        <div class="finish-help">Controller: A / Cross returns home · Y / Triangle opens leaderboard admin</div>
       </div>
     </div>
     <div class="overlay hidden" id="finishOverlay">
@@ -242,7 +283,7 @@
     </div>
   </div>
 
-  <div class="fact" id="fact"><b>Your mission:</b> Leave hyperscaler lock-in behind and reach Rackspace Cloud. Collect two VCF knowledge nodes in each zone to unlock the next gate.</div>
+  <div class="fact" id="fact"><b>Your mission:</b> Leave hyperscaler lock-in behind and reach Rackspace Cloud. Collect one VCF knowledge node in each zone to unlock the next gate.</div>
 
   <div class="touch" aria-label="Touch controls">
     <button id="leftBtn">←</button>
@@ -297,6 +338,7 @@
   const pauseRunStatus = $('pauseRunStatus');
   const licenseOverlay = $('licenseOverlay');
   const licenseContinueBtn = $('licenseContinueBtn');
+  const licenseHoldStatus = $('licenseHoldStatus');
   const finishOverlay = $('finishOverlay');
   const resultsOverlay = $('resultsOverlay');
   const resultsTitle = $('resultsTitle');
@@ -365,6 +407,7 @@
     spawnX:0,
     speed:420
   };
+  let licenseHoldUntil=0;
 
   const zones=[
     {
@@ -445,42 +488,37 @@
     const b=s*STAGE_W;
     platforms.push({x:b,y:GROUND,w:STAGE_W,h:80});
     const ps=[
-      [360,315,180],[700,260,170],[1020,320,210],[1320,275,190],[1580,320,170]
+      [340,315,240],[690,270,230],[1010,320,270],[1320,285,240],[1580,320,230]
     ];
-    ps.forEach((p,j)=>platforms.push({x:b+p[0],y:p[1]-(s===3&&j%2?25:0),w:p[2],h:18}));
-    const baseHazards=[260,610,950,1320,1640];
+    ps.forEach((p,j)=>platforms.push({x:b+p[0],y:p[1],w:p[2],h:18}));
+    // Easy event-mode difficulty: sparse hazards, wide recovery windows, slow drones.
+    const baseHazards=[520,1120,1660];
     baseHazards.forEach((x,j)=>{
       hazards.push({
-        x:b+x,y:GROUND-22,w:34+Math.min(18,s*3),h:22,
-        type:(j+s)%3===0?'drone':'spike',
-        phase:(s+j)*.73,speed:2.4+s*.38,amp:28+s*6
+        x:b+x,y:GROUND-20,w:26+Math.min(4,s),h:20,
+        type:(j===1 && s>=2)?'drone':'spike',
+        phase:(s+j)*.7,speed:1.55+s*.10,amp:14+s*2
       });
     });
-    const extraCount=s===5?7:s*2;
+
+    // Very light difficulty ramp: later zones add only a small number of well-spaced obstacles.
+    const extraByStage=[0,0,0,1,1,2];
+    const extraCount=extraByStage[s];
     for(let extra=0; extra<extraCount; extra++){
-      const x=b+360+extra*(118-Math.min(35,s*5));
+      const x=b+820+extra*470;
       hazards.push({
-        x,y:GROUND-22,w:32+(extra%2)*8,h:22,
-        type:extra%3===1?'drone':'spike',
-        phase:(s+extra)*.91,speed:2.6+s*.45,amp:30+s*7
+        x,y:GROUND-20,w:28,h:20,
+        type:extra%2===0?'spike':'drone',
+        phase:(s+extra)*.85,speed:1.8+s*.10,amp:18+s*2
       });
     }
-    if(s>=2){
-      hazards.push({x:b+1080,y:GROUND-22,w:38,h:22,type:'drone',phase:s*1.2,speed:3.7+s*.35,amp:44+s*5});
-      hazards.push({x:b+1140,y:GROUND-22,w:38,h:22,type:'drone',phase:s*1.2+1.4,speed:4.0+s*.35,amp:50+s*5});
-    }
-    if(s>=3){
-      [1450,1490,1530].forEach((x,idx)=>hazards.push({x:b+x,y:GROUND-22,w:34,h:22,type:'spike',phase:idx,speed:0,amp:0}));
-    }
-    if(s>=4){
-      [760,810,860,910].forEach((x,idx)=>hazards.push({x:b+x,y:GROUND-22,w:32,h:22,type:idx%2?'drone':'spike',phase:idx*1.1,speed:4.5+s*.3,amp:52+s*4}));
-    }
+
     if(s===5){
-      // Final stage stays challenging, but gives racers a little more breathing room.
-      [1210,1330,1450,1570].forEach((x,idx)=>hazards.push({
-        x:b+x,y:GROUND-22,w:34,h:22,type:idx%2===0?'drone':'spike',
-        phase:idx*.9,speed:4.25+idx*.08,amp:48
-      }));
+      // Final zone is still the busiest, but intentionally forgiving.
+      hazards.push({
+        x:b+1410,y:GROUND-20,w:28,h:20,type:'drone',
+        phase:1.2,speed:2.2,amp:24
+      });
     }
     const ts=[470,1090,1630];
     ts.forEach((x,j)=>tokens.push({x:b+x,y:[265,245,235][j],r:15,stage:s,fact:j,taken:false}));
@@ -489,7 +527,7 @@
   const state={
     running:false,paused:false,finished:false,time:0,penalty:0,stage:0,
     checkpointX:70,knowledge:0,knowledgeByStage:[0,0,0,0,0,0],
-    quizDone:[false,false,false,false,false,false],boost:100,hits:0,last:0
+    quizDone:[false,false,false,false,false,false],boost:100,hits:0,last:0,hitCooldown:0
   };
 
   function fmt(sec){
@@ -729,11 +767,56 @@
     });
   }
 
+  function returnHome(){
+    state.running=false;
+    state.paused=false;
+    state.finished=false;
+    state.time=0;
+    state.penalty=0;
+    state.stage=0;
+    state.checkpointX=70;
+    state.knowledge=0;
+    state.knowledgeByStage=[0,0,0,0,0,0];
+    state.quizDone=[false,false,false,false,false,false];
+    state.boost=100;
+    state.hits=0;
+    state.hitCooldown=0;
+    tokens.forEach(t=>t.taken=false);
+    licenseGhost.active=false;
+    licenseGhost.triggered=false;
+    licenseGhost.caught=false;
+    licenseGhost.x=-1000;
+    licenseHoldUntil=0;
+    Object.assign(player,{x:70,y:GROUND-44,vx:0,vy:0,onGround:true});
+    keys.left=false; keys.right=false; keys.jump=false; keys.boost=false;
+    keyboard.left=false; keyboard.right=false; keyboard.jump=false; keyboard.boost=false;
+    jumpButtonLatched=false;
+    jumpReleaseFrames=0;
+    quizOverlay.classList.add('hidden');
+    finishOverlay.classList.add('hidden');
+    resultsOverlay.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    licenseOverlay.classList.add('hidden');
+    adminOverlay.classList.add('hidden');
+    splashLeaderboardOverlay.classList.add('hidden');
+    startOverlay.classList.remove('hidden');
+    pauseBtn.disabled=true;
+    pauseBtn.textContent='Pause';
+    startBtn.textContent='Start Race';
+    splashSelection=0;
+    highlightSplashMenu();
+    fact.innerHTML='<b>Your mission:</b> Leave hyperscaler lock-in behind and reach Rackspace Cloud. Collect one VCF knowledge node in each zone to unlock the next gate.';
+    updateHud();
+    prevPad.confirm=false;
+    prevPad.pause=false;
+  }
+
   function resetRace(){
     Object.assign(state,{running:true,paused:false,finished:false,time:0,penalty:0,stage:0,checkpointX:70,knowledge:0,boost:100,hits:0});
     startMusic();
     state.knowledgeByStage=[0,0,0,0,0,0];
     state.quizDone=[false,false,false,false,false,false];
+    state.hitCooldown=0;
     tokens.forEach(t=>t.taken=false);
 
     // One random Licensing Ghost encounter per run.
@@ -746,9 +829,10 @@
     licenseGhost.triggered=false;
     licenseGhost.caught=false;
     licenseGhost.x=-1000;
+    licenseHoldUntil=0;
     licenseGhost.y=GROUND-licenseGhost.h;
     licenseGhost.spawnX=WORLD_W*(0.28+Math.random()*0.44);
-    licenseGhost.speed=410+Math.random()*35;
+    licenseGhost.speed=330+Math.random()*20;
     Object.assign(player,{x:70,y:GROUND-44,vx:0,vy:0,onGround:true});
     startOverlay.classList.add('hidden');
     quizOverlay.classList.add('hidden');
@@ -780,6 +864,10 @@
     licenseGhost.active=false;
     player.vx=0;
     state.running=false;
+    licenseHoldUntil=performance.now()+2000;
+    licenseContinueBtn.disabled=true;
+    licenseContinueBtn.textContent='Continue in 2.0s';
+    licenseHoldStatus.textContent='Licensing Ghost has you! Hold on…';
     licenseOverlay.classList.remove('hidden');
     prevPad.confirm=false;
     fact.innerHTML='<b>LICENSING GHOST:</b> Licensing complexity caught up with you. Rackspace can manage the VMware/Broadcom licensing relationship as part of the platform.';
@@ -787,12 +875,27 @@
 
   function dismissLicenseOverlay(){
     if(licenseOverlay.classList.contains('hidden')) return;
+    if(performance.now()<licenseHoldUntil) return;
     licenseOverlay.classList.add('hidden');
     if(!state.finished){
       state.running=true;
       app.focus();
     }
     prevPad.confirm=false;
+  }
+
+  function updateLicenseHold(now){
+    if(licenseOverlay.classList.contains('hidden')) return;
+    const remaining=Math.max(0,licenseHoldUntil-now);
+    if(remaining>0){
+      licenseContinueBtn.disabled=true;
+      licenseContinueBtn.textContent=`Continue in ${(remaining/1000).toFixed(1)}s`;
+      licenseHoldStatus.textContent='Licensing Ghost has you! Hold on…';
+    }else{
+      licenseContinueBtn.disabled=false;
+      licenseContinueBtn.textContent='Continue Race';
+      licenseHoldStatus.textContent='Controller: press A / Cross to continue';
+    }
   }
 
   function showFact(txt, stage){
@@ -805,12 +908,15 @@
   }
 
   function hitPlayer(){
-    state.penalty+=5;
+    if(state.hitCooldown>0) return;
+    state.penalty+=1;
     state.hits++;
-    player.x=state.checkpointX;
+    state.hitCooldown=1.25;
+    // Keep the racer near the obstacle instead of sending them back to the start of the zone.
+    player.x=Math.max(state.checkpointX,player.x-90);
     player.y=GROUND-player.h;
     player.vx=0; player.vy=0;
-    fact.innerHTML='<b>+5 sec:</b> obstacle hit. Respawned at the last checkpoint.';
+    fact.innerHTML='<b>+1 sec:</b> obstacle hit. You respawned just before the obstacle.';
   }
 
   function openQuiz(stage){
@@ -1113,7 +1219,7 @@
 
     if(!resultsOverlay.classList.contains('hidden')){
       if(edge('admin')){ openAdminOverlay(); prevPad=now; return; }
-      if(edge('confirm')) resetRace();
+      if(edge('confirm')) returnHome();
       prevPad=now; return;
     }
 
@@ -1176,6 +1282,7 @@
     if(!state.running||state.paused||state.finished)return;
     if(!navigator.getGamepads || ![...navigator.getGamepads()].some(Boolean)){ keys.left=keyboard.left; keys.right=keyboard.right; keys.boost=keyboard.boost; }
     state.time+=dt;
+    state.hitCooldown=Math.max(0,state.hitCooldown-dt);
 
     // Trigger exactly once per run at a randomized course position.
     if(!licenseGhost.triggered && player.x>=licenseGhost.spawnX){
@@ -1186,7 +1293,7 @@
     // is inevitable, but a skilled player can extend the chase.
     if(licenseGhost.active){
       const dx=player.x-licenseGhost.x;
-      const chaseSpeed=licenseGhost.speed + Math.min(55,Math.max(0,dx-220)*0.06);
+      const chaseSpeed=licenseGhost.speed + Math.min(25,Math.max(0,dx-260)*0.03);
       licenseGhost.x += chaseSpeed*dt;
       licenseGhost.y = GROUND-licenseGhost.h-8 + Math.sin(state.time*7)*13;
 
@@ -1199,13 +1306,13 @@
     }
 
     const boosting=keys.boost&&state.boost>0&&(keys.left||keys.right);
-    const speed=boosting?360:230;
+    const speed=boosting?405:270;
     state.boost=Math.max(0,Math.min(100,state.boost+(boosting?-30:11)*dt));
 
     player.vx=(keys.right?speed:0)-(keys.left?speed:0);
     if(keys.jump){
       if(player.onGround){
-        player.vy=-560;
+        player.vy=-625;
         player.onGround=false;
       }
       // Always consume the request this frame. Do not queue a held/airborne press
@@ -1213,7 +1320,7 @@
       keys.jump=false;
     }
 
-    player.vy+=1280*dt;
+    player.vy+=1040*dt;
     player.x+=player.vx*dt;
     player.x=Math.max(0,Math.min(WORLD_W-player.w,player.x));
 
@@ -1235,7 +1342,7 @@
     for(const h of hazards){
       let hy=h.y;
       if(h.type==='drone')hy=h.y-58+Math.sin(state.time*(h.speed||3.1)+h.phase)*(h.amp||46);
-      if(collide(player,{x:h.x,y:hy,w:h.w,h:h.h})){hitPlayer();break;}
+      if(state.hitCooldown<=0 && collide(player,{x:h.x+7,y:hy+4,w:Math.max(6,h.w-14),h:Math.max(6,h.h-7)})){hitPlayer();break;}
     }
 
     for(const t of tokens){
@@ -1253,12 +1360,12 @@
 
     const gate=(state.stage+1)*STAGE_W-110;
     if(!state.quizDone[state.stage]&&player.x>gate){
-      if(state.knowledgeByStage[state.stage]>=2){
+      if(state.knowledgeByStage[state.stage]>=1){
         player.x=gate-20;
         openQuiz(state.stage);
       }else{
         player.x=gate-90;
-        fact.innerHTML=`<b>Gate locked:</b> collect ${2-state.knowledgeByStage[state.stage]} more knowledge node(s) in this zone.`;
+        fact.innerHTML=`<b>Gate locked:</b> collect ${1-state.knowledgeByStage[state.stage]} more knowledge node in this zone.`;
       }
     }
 
@@ -1586,6 +1693,7 @@
     const dt=Math.min(.032,(now-last)/1000);
     last=now;
     pollGamepad();
+    updateLicenseHold(now);
     update(dt);
     draw();
     requestAnimationFrame(loop);
@@ -1659,7 +1767,7 @@
   clearLeaderboardBtn.addEventListener('click',openAdminOverlay);
   adminCancelBtn.addEventListener('click',closeAdminOverlay);
 
-  resultsRaceAgainBtn.addEventListener('click',resetRace);
+  resultsRaceAgainBtn.addEventListener('click',returnHome);
   musicBtn.addEventListener('click',()=>{ if(musicEnabled && !audioUnlocked){ unlockAudio(); } else { toggleMusic(); } });
   startBtn.addEventListener('click',resetRace);
   if(overlayStartBtn) overlayStartBtn.addEventListener('click',()=>{splashSelection=0;highlightSplashMenu();resetRace();});
